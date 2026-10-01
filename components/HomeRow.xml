@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="HomeRow" extends="Group">
+    <interface>
+        <field id="rowTitle" type="string" onChange="onTitle"/>
+        <field id="rowContent" type="node" onChange="onContent"/>
+        <field id="itemSelected" type="assocarray" alwaysNotify="true"/>
+        <field id="itemFocused" type="assocarray" alwaysNotify="true"/>
+        <function name="focusRow"/>
+        <function name="currentInfo"/>
+    </interface>
+    <children>
+        <Label id="titleLabel" translation="[0, -50]" width="1700" height="42" maxLines="1" color="0xF2F2F5FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="26"/>
+        </Label>
+        <RowList id="list"
+            itemComponentName="PosterItem"
+            itemSize="[1780, 240]"
+            rowHeights="[240]"
+            rowItemSize="[[160, 240]]"
+            rowItemSpacing="[[22, 0]]"
+            numRows="1"
+            showRowLabel="[false]"
+            focusXOffset="[0]"
+            rowFocusAnimationStyle="floatingFocus"
+            focusBitmapUri="pkg:/images/focus_ring.9.png"/>
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/HomeRow.brs"/>
+</component>

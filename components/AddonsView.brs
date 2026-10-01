@@ -17,22 +17,22 @@ sub focusView()
 end sub
 
 function addonLine(a as Object) as String
-    st = tr("state_on")
+    st = i18n("state_on")
     if a.ok <> true then
-        st = tr("state_err")
+        st = i18n("state_err")
     else if a.enabled <> true then
-        st = tr("state_off")
+        st = i18n("state_off")
     end if
     return "[" + st + "]  " + a.name + "     " + a.url
 end function
 
 sub renderList()
-    m.top.findNode("titleLabel").text = tr("addons_title")
-    m.top.findNode("topHint").text = tr("addons_hint")
+    m.top.findNode("titleLabel").text = i18n("addons_title")
+    m.top.findNode("topHint").text = i18n("addons_hint")
     addons = m.global.addons
     content = CreateObject("roSGNode", "ContentNode")
     c = content.createChild("ContentNode")
-    c.title = tr("addons_add")
+    c.title = i18n("addons_add")
     for each a in addons
         c = content.createChild("ContentNode")
         c.title = addonLine(a)
@@ -88,10 +88,10 @@ end function
 ' ---------------------------------------------------------------------------
 sub showAddDialog()
     dlg = CreateObject("roSGNode", "StandardKeyboardDialog")
-    dlg.title = tr("addon_dlg_title")
-    dlg.message = [tr("addon_dlg_msg")]
+    dlg.title = i18n("addon_dlg_title")
+    dlg.message = [i18n("addon_dlg_msg")]
     dlg.text = "https://"
-    dlg.buttons = [tr("btn_add"), tr("btn_cancel")]
+    dlg.buttons = [i18n("btn_add"), i18n("btn_cancel")]
     dlg.observeField("buttonSelected", "onDialogButton")
     m.dlg = dlg
     m.top.getScene().dialog = dlg
@@ -108,16 +108,16 @@ end sub
 sub addAddonFromUrl(raw as String)
     base = normalizeAddonUrl(raw)
     if base = "" then
-        showMessage(tr("addon_url_bad_t"), tr("addon_url_bad_b"))
+        showMessage(i18n("addon_url_bad_t"), i18n("addon_url_bad_b"))
         return
     end if
     for each a in m.global.addons
         if a.url = base then
-            showMessage(tr("addon_dup_t"), base)
+            showMessage(i18n("addon_dup_t"), base)
             return
         end if
     end for
-    m.hint.text = tr("addons_checking")
+    m.hint.text = i18n("addons_checking")
     startJson(base + "/manifest.json", "onManifestResult", { url: base })
 end sub
 
@@ -134,7 +134,7 @@ sub onManifestResult(event as Object)
     end if
 
     if not valid then
-        showMessage(tr("addon_bad_t"), trf("addon_bad_b", ctx.url))
+        showMessage(i18n("addon_bad_t"), trf("addon_bad_b", ctx.url))
         return
     end if
 
@@ -143,5 +143,5 @@ sub onManifestResult(event as Object)
     list = m.global.addons
     list.push({ url: ctx.url, enabled: true, name: nm, manifest: res.data, ok: true })
     commitAddons(list)
-    showMessage(tr("addon_added_t"), nm)
+    showMessage(i18n("addon_added_t"), nm)
 end sub

@@ -7,7 +7,7 @@ function langCodes() as Object
     return ["pt", "en", "es"]
 end function
 
-function tr(key as String) as String
+function i18n(key as String) as String
     lang = m.global.lang
     if m.strs = invalid or m.strsLang <> lang then
         m.strs = buildStrings(lang)
@@ -20,11 +20,11 @@ end function
 
 ' Substitui %1 pelo argumento
 function trf(key as String, arg as String) as String
-    return replaceAll(tr(key), "%1", arg)
+    return replaceAll(i18n(key), "%1", arg)
 end function
 
 function trf2(key as String, a as String, b as String) as String
-    return replaceAll(replaceAll(tr(key), "%1", a), "%2", b)
+    return replaceAll(replaceAll(i18n(key), "%1", a), "%2", b)
 end function
 
 function buildStrings(lang as String) as Object
@@ -35,29 +35,29 @@ end function
 
 function genreLabel(g as String) as String
     k = "g_" + LCase(g)
-    v = tr(k)
+    v = i18n(k)
     if v = k then return g
     return v
 end function
 
 function epCode(season as Integer, episode as Integer) as String
-    return tr("season_short") + Str(season).trim() + tr("episode_short") + Str(episode).trim()
+    return i18n("season_short") + Str(season).trim() + i18n("episode_short") + Str(episode).trim()
 end function
 
 function kindLabel(kind as String) as String
-    if kind = "movie" then return tr("kind_movie_p")
-    if kind = "series" then return tr("kind_series_p")
-    if kind = "anime" then return tr("kind_anime_p")
-    if kind = "tv" then return tr("kind_tv_p")
-    if kind = "channel" then return tr("kind_channel_p")
+    if kind = "movie" then return i18n("kind_movie_p")
+    if kind = "series" then return i18n("kind_series_p")
+    if kind = "anime" then return i18n("kind_anime_p")
+    if kind = "tv" then return i18n("kind_tv_p")
+    if kind = "channel" then return i18n("kind_channel_p")
     return kind
 end function
 
 function kindSingular(kind as String) as String
-    if kind = "movie" then return tr("kind_movie_s")
-    if kind = "series" then return tr("kind_series_s")
-    if kind = "anime" then return tr("kind_anime_s")
-    if kind = "tv" then return tr("kind_tv_s")
+    if kind = "movie" then return i18n("kind_movie_s")
+    if kind = "series" then return i18n("kind_series_s")
+    if kind = "anime" then return i18n("kind_anime_s")
+    if kind = "tv" then return i18n("kind_tv_s")
     return ""
 end function
 

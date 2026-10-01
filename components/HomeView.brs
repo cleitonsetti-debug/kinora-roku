@@ -1,6 +1,8 @@
 ' =============================================================================
 ' HomeView: barra de navegacao no topo, filtros (Filmes/Series), banner (hero)
-' do titulo em foco e linhas de catalogos dos addons ativos
+' do titulo em foco e linhas de catalogos dos addons ativos.
+' Cada linha e um HomeRow (titulo proprio + RowList de uma linha); a rolagem
+' vertical e feita aqui, com posicoes fixas, sem depender dos rotulos da RowList.
 ' =============================================================================
 
 sub init()
@@ -10,7 +12,7 @@ sub init()
     m.filterPanel = m.top.findNode("filterPanel")
     m.filterList = m.top.findNode("filterList")
     m.filterTitle = m.top.findNode("filterTitle")
-    m.rows = m.top.findNode("rows")
+    m.rowsGroup = m.top.findNode("rowsGroup")
     m.status = m.top.findNode("statusLabel")
     m.debounce = m.top.findNode("debounce")
     m.heroTimer = m.top.findNode("heroTimer")
@@ -36,6 +38,10 @@ sub init()
     m.pickerMode = ""
     m.pickerValues = []
     m.catOptions = []
+    m.rowViews = []
+    m.rowHasTitle = []
+    m.curRow = 0
+    m.pendingHero = invalid
     m.fState = { movie: { cat: -1, genre: "" }, series: { cat: -1, genre: "" } }
     m.menuKeys = ["home", "movies", "series", "search", "addons", "settings"]
     m.uiLang = ""
@@ -46,8 +52,6 @@ sub init()
     m.nav.observeField("itemSelected", "onNavSelected")
     m.filterBar.observeField("itemSelected", "onFilterSelected")
     m.filterList.observeField("itemSelected", "onPickerSelected")
-    m.rows.observeField("rowItemSelected", "onRowItemSelected")
-    m.rows.observeField("rowItemFocused", "onRowItemFocused")
     m.debounce.observeField("fire", "onDebounce")
     m.heroTimer.observeField("fire", "onHeroTimer")
     moveIndicator("home")
@@ -56,7 +60,7 @@ end sub
 sub rebuildNav()
     m.uiLang = m.global.lang
     navContent = CreateObject("roSGNode", "ContentNode")
-    labels = [tr("nav_home"), tr("nav_movies"), tr("nav_series"), tr("nav_search"), tr("nav_addons"), tr("nav_settings")]
+    labels = [i18n("nav_home"), i18n("nav_movies"), i18n("nav_series"), i18n("nav_search"), i18n("nav_addons"), i18n("nav_settings")]
     for each label in labels
         c = navContent.createChild("ContentNode")
         c.title = label
@@ -78,7 +82,7 @@ sub focusView()
     if m.panelOpen then
         m.filterList.setFocus(true)
     else if m.focusArea = "rows" and m.hasRows then
-        m.rows.setFocus(true)
+        focusRows()
     else if m.focusArea = "filters" and m.filterBar.visible then
         m.filterBar.setFocus(true)
     else
@@ -132,8 +136,9 @@ sub onNavSelected()
 end sub
 
 sub focusRows()
+    if m.rowViews.count() = 0 then return
     m.focusArea = "rows"
-    m.rows.setFocus(true)
+    m.rowViews[m.curRow].callFunc("focusRow")
 end sub
 
 sub focusNav()
@@ -158,7 +163,10 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     end if
 
     if key = "down" then
-        if m.nav.hasFocus() then
+        if m.focusArea = "rows" then
+            moveRow(1)
+            return true
+        else if m.nav.hasFocus() then
             if m.filterBar.visible then
                 focusFilters()
                 return true
@@ -173,8 +181,10 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             end if
         end if
     else if key = "up" then
-        if m.rows.hasFocus() then
-            if m.filterBar.visible then
+        if m.focusArea = "rows" then
+            if m.curRow > 0 then
+                moveRow(-1)
+            else if m.filterBar.visible then
                 focusFilters()
             else
                 focusNav()
@@ -185,13 +195,94 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             return true
         end if
     else if key = "back" then
-        if m.rows.hasFocus() or m.filterBar.hasFocus() then
+        if m.focusArea = "rows" or m.filterBar.hasFocus() then
             focusNav()
             return true
         end if
     end if
     return false
 end function
+
+' ---------------------------------------------------------------------------
+' Linhas (HomeRow): criacao, posicao e rolagem vertical
+' ---------------------------------------------------------------------------
+sub clearRows()
+    for each v in m.rowViews
+        m.rowsGroup.removeChild(v)
+    end for
+    m.rowViews = []
+    m.rowHasTitle = []
+    m.curRow = 0
+    m.hasRows = false
+end sub
+
+sub buildRows(defs as Object)
+    clearRows()
+    for each d in defs
+        root = CreateObject("roSGNode", "ContentNode")
+        row = root.createChild("ContentNode")
+        for each n in d.nodes
+            row.appendChild(n)
+        end for
+        view = CreateObject("roSGNode", "HomeRow")
+        view.rowTitle = d.title
+        view.rowContent = root
+        view.observeField("itemSelected", "onRowSelected")
+        view.observeField("itemFocused", "onRowFocused")
+        m.rowsGroup.appendChild(view)
+        m.rowViews.push(view)
+        m.rowHasTitle.push(d.title <> "")
+    end for
+    m.curRow = 0
+    m.hasRows = (m.rowViews.count() > 0)
+    layoutRows()
+end sub
+
+' A linha em foco fica sempre no mesmo lugar (y=548); as proximas vem abaixo,
+' as anteriores ficam escondidas. Linhas com titulo tem 90 px de respiro, sem titulo 24 px.
+sub layoutRows()
+    y = 548
+    for i = 0 to m.rowViews.count() - 1
+        v = m.rowViews[i]
+        if i < m.curRow then
+            v.visible = false
+        else
+            if i > m.curRow then
+                if m.rowHasTitle[i] then
+                    y = y + 240 + 90
+                else
+                    y = y + 240 + 24
+                end if
+            end if
+            v.translation = [70, y]
+            v.visible = (y < 1080)
+        end if
+    end for
+end sub
+
+sub moveRow(delta as Integer)
+    n = m.curRow + delta
+    if n < 0 or n >= m.rowViews.count() then return
+    m.curRow = n
+    layoutRows()
+    focusRows()
+    info = m.rowViews[n].callFunc("currentInfo")
+    if info <> invalid then setHero(info)
+end sub
+
+sub onRowSelected(event as Object)
+    info = event.getData()
+    if info <> invalid then m.top.itemSelected = info
+end sub
+
+sub onRowFocused(event as Object)
+    if m.rowViews.count() = 0 then return
+    node = event.getRoSGNode()
+    if not node.isSameNode(m.rowViews[m.curRow]) then return
+    m.pendingHero = event.getData()
+    m.heroTimer.control = "stop"
+    m.heroTimer.control = "start"
+end sub
 
 ' ---------------------------------------------------------------------------
 ' Banner (hero) do item em foco
@@ -224,19 +315,8 @@ sub clearHero()
     m.heroDesc.text = ""
 end sub
 
-sub onRowItemFocused()
-    m.heroTimer.control = "stop"
-    m.heroTimer.control = "start"
-end sub
-
 sub onHeroTimer()
-    if not m.hasRows then return
-    sel = m.rows.rowItemFocused
-    row = m.rows.content.getChild(sel[0])
-    if row = invalid then return
-    item = row.getChild(sel[1])
-    if item = invalid then return
-    setHero(item.info)
+    if m.pendingHero <> invalid then setHero(m.pendingHero)
 end sub
 
 ' ---------------------------------------------------------------------------
@@ -293,18 +373,18 @@ sub updateFilterBar(kind as String)
         return
     end if
 
-    catName = tr("filter_all")
-    gLabel = tr("filter_genre")
+    catName = i18n("filter_all")
+    gLabel = i18n("filter_genre")
     if st.cat >= 0 then
         catName = m.catOptions[st.cat].name
-        if m.catOptions[st.cat].id = "year" then gLabel = tr("filter_year")
+        if m.catOptions[st.cat].id = "year" then gLabel = i18n("filter_year")
     end if
-    genreName = tr("filter_all")
+    genreName = i18n("filter_all")
     if st.genre <> "" then genreName = genreLabel(st.genre)
 
     content = CreateObject("roSGNode", "ContentNode")
     c1 = content.createChild("ContentNode")
-    c1.title = tr("filter_catalog") + ": " + catName
+    c1.title = i18n("filter_catalog") + ": " + catName
     if genreChoices(kind).count() > 0 then
         c2 = content.createChild("ContentNode")
         c2.title = gLabel + ": " + genreName
@@ -335,9 +415,9 @@ sub openPicker(mode as String)
     current = 0
 
     if mode = "cat" then
-        m.filterTitle.text = tr("filter_pick_catalog")
+        m.filterTitle.text = i18n("filter_pick_catalog")
         c = content.createChild("ContentNode")
-        c.title = tr("filter_all")
+        c.title = i18n("filter_all")
         m.pickerValues.push(-1)
         for i = 0 to m.catOptions.count() - 1
             c = content.createChild("ContentNode")
@@ -353,13 +433,13 @@ sub openPicker(mode as String)
             required = (m.catOptions[st.cat].genreReq = true)
         end if
         if isYear then
-            m.filterTitle.text = tr("filter_pick_year")
+            m.filterTitle.text = i18n("filter_pick_year")
         else
-            m.filterTitle.text = tr("filter_pick_genre")
+            m.filterTitle.text = i18n("filter_pick_genre")
         end if
         if not required then
             c = content.createChild("ContentNode")
-            c.title = tr("filter_all")
+            c.title = i18n("filter_all")
             m.pickerValues.push("")
         end if
         for each g in genreChoices(kind)
@@ -411,11 +491,9 @@ sub loadCategory(cat as String)
     m.loadedRev = m.global.addonsRev
     m.loadedHist = m.global.historyRev
     m.results = {}
-    m.hasRows = false
     m.loading = true
     m.singleMode = false
-    m.rows.visible = false
-    m.rows.content = CreateObject("roSGNode", "ContentNode")
+    clearRows()
     moveIndicator(cat)
     clearHero()
 
@@ -457,7 +535,7 @@ sub loadCategory(cat as String)
     m.catalogs = catalogs
     m.total = m.catalogs.count()
     m.pending = m.total
-    m.status.text = tr("loading")
+    m.status.text = i18n("loading")
     m.status.visible = true
 
     if m.total = 0 then
@@ -495,8 +573,7 @@ end sub
 
 sub finishLoad()
     m.loading = false
-    root = CreateObject("roSGNode", "ContentNode")
-    rowCount = 0
+    defs = []
     firstInfo = invalid
 
     ' Linha "Continuar assistindo" (so na tela inicial)
@@ -512,12 +589,7 @@ sub finishLoad()
             end if
         end for
         if nodes.count() > 0 then
-            row = root.createChild("ContentNode")
-            row.title = tr("continue_watching")
-            for each n in nodes
-                row.appendChild(n)
-            end for
-            rowCount = rowCount + 1
+            defs.push({ title: i18n("continue_watching"), nodes: nodes })
             firstInfo = nodes[0].info
         end if
     end if
@@ -527,7 +599,7 @@ sub finishLoad()
         metas = m.results[Str(i).trim()]
         if metas <> invalid then
             c = m.catalogs[i]
-            row = invalid
+            chunk = invalid
             n = 0
             perRow = 30
             if m.singleMode then perRow = 8
@@ -535,17 +607,14 @@ sub finishLoad()
                 if Type(meta) = "roAssociativeArray" then
                     info = metaToInfo(meta, c.base, c.kind)
                     if info.id <> "" and info.name <> "" then
-                        if row = invalid or (n mod perRow) = 0 then
-                            if row <> invalid and not m.singleMode then exit for
-                            row = root.createChild("ContentNode")
-                            if n = 0 then
-                                row.title = c.title
-                            else
-                                row.title = ""
-                            end if
-                            rowCount = rowCount + 1
+                        if chunk = invalid or (n mod perRow) = 0 then
+                            if chunk <> invalid and not m.singleMode then exit for
+                            t = ""
+                            if n = 0 then t = c.title
+                            chunk = { title: t, nodes: [] }
+                            defs.push(chunk)
                         end if
-                        row.appendChild(infoToNode(info, ""))
+                        chunk.nodes.push(infoToNode(info, ""))
                         if firstInfo = invalid then firstInfo = info
                         n = n + 1
                         if n >= 96 then exit for
@@ -555,9 +624,7 @@ sub finishLoad()
         end if
     end for
 
-    m.rows.content = root
-    m.hasRows = (rowCount > 0)
-    m.rows.visible = m.hasRows
+    buildRows(defs)
 
     if m.hasRows then
         m.status.visible = false
@@ -571,17 +638,8 @@ end sub
 
 function emptyMessage() as String
     addons = m.global.addons
-    if addons.count() = 0 then return tr("empty_no_addons")
-    if countEnabled(addons) = 0 then return tr("empty_all_disabled")
-    if anyAddonFailed(addons) then return tr("empty_failed")
-    return tr("empty_nocatalog")
+    if addons.count() = 0 then return i18n("empty_no_addons")
+    if countEnabled(addons) = 0 then return i18n("empty_all_disabled")
+    if anyAddonFailed(addons) then return i18n("empty_failed")
+    return i18n("empty_nocatalog")
 end function
-
-sub onRowItemSelected()
-    sel = m.rows.rowItemSelected
-    row = m.rows.content.getChild(sel[0])
-    if row = invalid then return
-    item = row.getChild(sel[1])
-    if item = invalid then return
-    m.top.itemSelected = item.info
-end sub

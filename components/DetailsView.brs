@@ -35,7 +35,7 @@ sub init()
 
     btn = CreateObject("roSGNode", "ContentNode")
     b = btn.createChild("ContentNode")
-    b.title = tr("details_watch")
+    b.title = i18n("details_watch")
     m.watchBtn.content = btn
 
     m.watchBtn.observeField("itemSelected", "onWatchPressed")
@@ -97,7 +97,7 @@ sub onItem()
     else
         m.mode = "loading"
         m.watchBtn.visible = false
-        m.infoLabel.text = tr("loading_episodes")
+        m.infoLabel.text = i18n("loading_episodes")
         m.infoLabel.visible = true
         loadMeta()
     end if
@@ -242,7 +242,7 @@ sub showEpisodes()
     for each s in m.seasons
         c = row.createChild("ContentNode")
         if s.season = 0 then
-            c.title = tr("specials")
+            c.title = i18n("specials")
         else
             c.title = trf("season_n", Str(s.season).trim())
         end if
@@ -324,7 +324,7 @@ sub startStreams(videoId as String, epLabel as String, season as Integer, episod
     m.unsupported = 0
     m.panelOpen = true
     m.panel.visible = true
-    m.panelTitle.text = tr("panel_searching")
+    m.panelTitle.text = i18n("panel_searching")
     m.streamList.content = CreateObject("roSGNode", "ContentNode")
     m.streamList.setFocus(true)
 
@@ -404,7 +404,7 @@ sub finishStreams()
     realCount = m.found.count()
     m.streams = m.found
     ' Video de teste sempre no fim da lista, para validar o player
-    m.streams.push({ url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", title: tr("demo_title"), headers: [], demo: true })
+    m.streams.push({ url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", title: i18n("demo_title"), headers: [], demo: true })
 
     content = CreateObject("roSGNode", "ContentNode")
     for each s in m.streams
@@ -416,7 +416,7 @@ sub finishStreams()
     if realCount > 0 then
         m.panelTitle.text = trf("panel_choose", Str(realCount).trim())
     else
-        t = tr("panel_none")
+        t = i18n("panel_none")
         if m.unsupported > 0 then t = t + trf("panel_unsupported", Str(m.unsupported).trim())
         m.panelTitle.text = t
     end if

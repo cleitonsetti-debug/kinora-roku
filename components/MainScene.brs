@@ -10,7 +10,7 @@ sub init()
     m.tasks = []
     m.started = false
     m.status = m.top.findNode("statusLabel")
-    m.status.text = tr("loading")
+    m.status.text = i18n("loading")
     loadAddons()
 end sub
 
@@ -22,7 +22,7 @@ sub loadAddons()
     m.cfg = cfg
     m.mf = {}
     m.mfPending = cfg.count()
-    m.status.text = tr("loading_addons")
+    m.status.text = i18n("loading_addons")
     if m.started = false then m.status.visible = true
     for i = 0 to cfg.count() - 1
         startJson(cfg[i].url + "/manifest.json", "onManifest", { index: i })

@@ -55,7 +55,7 @@ sub onState()
         code = m.video.errorCode
         saveNow()
         closePlayer()
-        showMessage(tr("play_error_title"), trf2("play_error_body", msg, Str(code).trim()))
+        showMessage(i18n("play_error_title"), trf2("play_error_body", msg, Str(code).trim()))
     end if
 end sub
 

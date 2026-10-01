@@ -27,9 +27,9 @@ sub init()
     m.curCol = 0
     m.curRow = 0
 
-    m.top.findNode("titleLabel").text = tr("search_title")
-    m.top.findNode("hintLabel").text = tr("search_hint_keys")
-    m.status.text = tr("search_hint_min")
+    m.top.findNode("titleLabel").text = i18n("search_title")
+    m.top.findNode("hintLabel").text = i18n("search_hint_keys")
+    m.status.text = i18n("search_hint_min")
 
     buildKeyboard()
     moveCursor()
@@ -46,12 +46,12 @@ sub buildKeyboard()
         c = Mid(letters, i, 1)
         m.keyDefs.push({ label: c, kind: "char", ch: LCase(c) })
     end for
-    m.keyDefs.push({ label: tr("key_space"), kind: "space", ch: " " })
-    m.keyDefs.push({ label: tr("key_del"), kind: "del", ch: "" })
-    m.keyDefs.push({ label: tr("key_clear"), kind: "clear", ch: "" })
+    m.keyDefs.push({ label: i18n("key_space"), kind: "space", ch: " " })
+    m.keyDefs.push({ label: i18n("key_del"), kind: "del", ch: "" })
+    m.keyDefs.push({ label: i18n("key_clear"), kind: "clear", ch: "" })
     m.keyDefs.push({ label: "-", kind: "char", ch: "-" })
     m.keyDefs.push({ label: "'", kind: "char", ch: "'" })
-    m.keyDefs.push({ label: tr("key_go"), kind: "go", ch: "" })
+    m.keyDefs.push({ label: i18n("key_go"), kind: "go", ch: "" })
 
     for i = 0 to m.keyDefs.count() - 1
         col = i mod m.cols
@@ -93,7 +93,7 @@ end sub
 
 sub refreshQuery()
     if m.query = "" then
-        m.queryLabel.text = tr("search_placeholder")
+        m.queryLabel.text = i18n("search_placeholder")
         m.queryLabel.color = "0x7A7A86FF"
     else
         m.queryLabel.text = m.query + "|"
@@ -124,7 +124,7 @@ sub onDebounce()
     q = m.query.trim()
     m.gen = m.gen + 1
     if Len(q) < 2 then
-        clearResults(tr("search_hint_min"))
+        clearResults(i18n("search_hint_min"))
         return
     end if
 
@@ -132,11 +132,11 @@ sub onDebounce()
     m.pending = m.catalogs.count()
     m.results = {}
     if m.pending = 0 then
-        clearResults(tr("search_none_addon"))
+        clearResults(i18n("search_none_addon"))
         return
     end if
 
-    m.status.text = tr("searching")
+    m.status.text = i18n("searching")
     m.status.visible = true
     enc = urlEncode(q)
     for i = 0 to m.catalogs.count() - 1
@@ -195,7 +195,7 @@ sub renderResults()
     end for
 
     if n = 0 then
-        clearResults(tr("nothing_found"))
+        clearResults(i18n("nothing_found"))
         return
     end if
 

@@ -17,20 +17,20 @@ sub focusView()
 end sub
 
 function yesNo(v as Dynamic) as String
-    if v = true then return tr("yes")
-    return tr("no")
+    if v = true then return i18n("yes")
+    return i18n("no")
 end function
 
 sub renderList()
-    m.top.findNode("titleLabel").text = tr("settings_title")
-    m.top.findNode("topHint").text = tr("settings_hint")
+    m.top.findNode("titleLabel").text = i18n("settings_title")
+    m.top.findNode("topHint").text = i18n("settings_hint")
     lines = [
-        tr("set_language") + ":   " + tr("lang_name")
-        tr("set_resume") + ":   " + yesNo(m.global.optResume)
-        tr("set_autopick") + ":   " + yesNo(m.global.optAutoPick)
-        tr("set_clear_history")
-        tr("set_reset_addons")
-        tr("set_about")
+        i18n("set_language") + ":   " + i18n("lang_name")
+        i18n("set_resume") + ":   " + yesNo(m.global.optResume)
+        i18n("set_autopick") + ":   " + yesNo(m.global.optAutoPick)
+        i18n("set_clear_history")
+        i18n("set_reset_addons")
+        i18n("set_about")
     ]
     content = CreateObject("roSGNode", "ContentNode")
     for each t in lines
@@ -55,11 +55,12 @@ sub onSelected()
         persistSettings()
         renderList()
     else if idx = 3 then
-        askConfirm("history", tr("confirm_clear_history"))
+        askConfirm("history", i18n("confirm_clear_history"))
     else if idx = 4 then
-        askConfirm("addons", tr("confirm_reset_addons"))
+        askConfirm("addons", i18n("confirm_reset_addons"))
     else if idx = 5 then
-        showMessage(tr("about_title"), tr("about_body"))
+        ai = CreateObject("roAppInfo")
+        showMessage(i18n("about_title"), i18n("about_body") + "  [" + ai.GetVersion() + "]")
     end if
 end sub
 
@@ -76,9 +77,9 @@ end sub
 
 sub askConfirm(action as String, text as String)
     dlg = CreateObject("roSGNode", "StandardMessageDialog")
-    dlg.title = tr("settings_title")
+    dlg.title = i18n("settings_title")
     dlg.message = [text]
-    dlg.buttons = [tr("btn_confirm"), tr("btn_cancel")]
+    dlg.buttons = [i18n("btn_confirm"), i18n("btn_cancel")]
     dlg.observeField("buttonSelected", "onConfirmButton")
     m.confirmAction = action
     m.confirmDlg = dlg
@@ -94,10 +95,10 @@ sub onConfirmButton(event as Object)
     if m.confirmAction = "history" then
         regWrite("history", [])
         m.global.historyRev = m.global.historyRev + 1
-        showMessage(tr("settings_title"), tr("history_cleared"))
+        showMessage(i18n("settings_title"), i18n("history_cleared"))
     else if m.confirmAction = "addons" then
         regWrite("addons", defaultAddonConfig())
         m.top.action = "reload"
-        showMessage(tr("settings_title"), tr("addons_reset"))
+        showMessage(i18n("settings_title"), i18n("addons_reset"))
     end if
 end sub

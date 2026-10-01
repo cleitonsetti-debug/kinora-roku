@@ -45,22 +45,7 @@
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
         </Label>
 
-        <RowList id="rows"
-            translation="[70, 540]"
-            itemComponentName="PosterItem"
-            itemSize="[1780, 240]"
-            rowHeights="[240]"
-            rowItemSize="[[160, 240]]"
-            rowItemSpacing="[[22, 0]]"
-            rowSpacings="[100]"
-            numRows="2"
-            showRowLabel="[true]"
-            rowLabelOffset="[[0, -20]]"
-            rowLabelColor="0xF2F2F5FF"
-            focusXOffset="[0]"
-            rowFocusAnimationStyle="floatingFocus"
-            focusBitmapUri="pkg:/images/focus_ring.9.png"
-            visible="false"/>
+        <Group id="rowsGroup" translation="[0, 0]"/>
         <Label id="statusLabel" text="" translation="[400, 520]" width="1100" horizAlign="center" wrap="true" maxLines="4" color="0xC9C9D2FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="28"/>
         </Label>
