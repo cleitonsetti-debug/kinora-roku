@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="HomeView" extends="Group">
+    <interface>
+        <field id="itemSelected" type="assocarray" alwaysNotify="true"/>
+        <field id="menuAction" type="string" alwaysNotify="true"/>
+        <function name="focusView"/>
+    </interface>
+    <children>
+        <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
+        <Poster id="heroBackdrop" width="1920" height="1080" loadDisplayMode="scaleToZoom"/>
+        <Poster uri="pkg:/images/grad_left.png" width="1920" height="1080"/>
+        <Poster uri="pkg:/images/grad_bottom.png" width="1920" height="1080"/>
+        <Poster uri="pkg:/images/grad_top.png" width="1920" height="200"/>
+
+        <Label id="brand" text="KINORA" translation="[80, 42]" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="30"/>
+        </Label>
+        <MarkupGrid id="nav"
+            translation="[600, 36]"
+            itemComponentName="NavItem"
+            itemSize="[170, 56]"
+            itemSpacing="[8, 0]"
+            numColumns="6"
+            numRows="1"
+            focusBitmapUri="pkg:/images/pill_soft.9.png"/>
+        <Rectangle id="navIndicator" translation="[635, 98]" width="100" height="4" color="0xFFFFFFFF"/>
+
+        <MarkupGrid id="filterBar"
+            translation="[1120, 112]"
+            itemComponentName="ChipItem"
+            itemSize="[360, 52]"
+            itemSpacing="[12, 0]"
+            numColumns="2"
+            numRows="1"
+            focusBitmapUri="pkg:/images/key_focus.9.png"
+            visible="false"/>
+
+        <Label id="heroTitle" translation="[80, 130]" width="1000" height="150" maxLines="2" vertAlign="bottom" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="46"/>
+        </Label>
+        <Label id="heroMeta" translation="[80, 290]" width="1000" height="36" maxLines="1" color="0xC9C9D2FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="22"/>
+        </Label>
+        <Label id="heroDesc" translation="[80, 336]" width="860" height="100" wrap="true" maxLines="3" color="0xB4B4BFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
+        </Label>
+
+        <RowList id="rows"
+            translation="[70, 540]"
+            itemComponentName="PosterItem"
+            itemSize="[1780, 240]"
+            rowHeights="[240]"
+            rowItemSize="[[160, 240]]"
+            rowItemSpacing="[[22, 0]]"
+            rowSpacings="[100]"
+            numRows="2"
+            showRowLabel="[true]"
+            rowLabelOffset="[[0, -20]]"
+            rowLabelColor="0xF2F2F5FF"
+            focusXOffset="[0]"
+            rowFocusAnimationStyle="floatingFocus"
+            focusBitmapUri="pkg:/images/focus_ring.9.png"
+            visible="false"/>
+        <Label id="statusLabel" text="" translation="[400, 520]" width="1100" horizAlign="center" wrap="true" maxLines="4" color="0xC9C9D2FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="28"/>
+        </Label>
+        <Group id="filterPanel" visible="false">
+            <Rectangle width="1920" height="1080" color="0x000000C0"/>
+            <Rectangle translation="[560, 90]" width="800" height="900" color="0x14141AFF"/>
+            <Label id="filterTitle" text="" translation="[610, 120]" width="700" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="32"/>
+            </Label>
+            <LabelList id="filterList"
+                translation="[600, 200]"
+                itemSize="[720, 60]"
+                numRows="11"
+                textHorizOffset="24"
+                color="0xD8D8E0FF"
+                focusedColor="0x0A0A0DFF"
+                focusBitmapUri="pkg:/images/pill_white.9.png"
+                focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
+        </Group>
+        <Timer id="debounce" repeat="false" duration="0.4"/>
+        <Timer id="heroTimer" repeat="false" duration="0.3"/>
+    </children>
+    <script type="text/brightscript" uri="pkg:/source/Utils.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/Storage.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/AddonStore.brs"/>
+    <script type="text/brightscript" uri="pkg:/components/HomeView.brs"/>
+</component>

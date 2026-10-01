@@ -1,0 +1,18 @@
+# segredos e configuracoes locais
+.env
+.env.*
+*.pem
+*.key
+
+# pacotes gerados
+*.zip
+out/
+build/
+
+# lixo de sistema/editor
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+.vscode/
+.idea/

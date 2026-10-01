@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="JsonTask" extends="Task">
+    <interface>
+        <field id="url" type="string"/>
+        <field id="timeoutMs" type="integer" value="15000"/>
+        <field id="context" type="assocarray"/>
+        <field id="result" type="assocarray"/>
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/JsonTask.brs"/>
+</component>
