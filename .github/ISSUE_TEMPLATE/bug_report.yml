@@ -1,0 +1,73 @@
+name: Relatar erro / Bug report
+description: Algo não funciona como deveria no Kinora / Something is not working as expected
+title: "[Erro] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por ajudar! Quanto mais detalhes, mais rápido consigo corrigir.
+        Thanks for helping! The more details, the faster I can fix it.
+
+        **Não cite nomes nem links de addons que forneçam conteúdo pirata.** Esses relatos serão fechados.
+        **Do not mention names or links of addons that provide pirated content.** Such reports will be closed.
+  - type: input
+    id: roku_model
+    attributes:
+      label: Modelo do Roku / Roku model
+      description: Em Configurações > Sistema > Sobre (Settings > System > About)
+      placeholder: "Ex.: Roku Express 3930, Roku Ultra, TV com Roku"
+    validations:
+      required: true
+  - type: input
+    id: roku_os
+    attributes:
+      label: Versão do sistema do Roku / Roku OS version
+      description: Aparece na mesma tela do modelo / Shown on the same screen as the model
+      placeholder: "Ex.: 14.1.4"
+    validations:
+      required: true
+  - type: input
+    id: kinora_version
+    attributes:
+      label: Versão do Kinora / Kinora version
+      description: No app, abra Ajustes > Sobre (Settings > About). O número fica entre colchetes.
+      placeholder: "Ex.: 1.2.9"
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: O que aconteceu? / What happened?
+      description: Descreva o problema e o que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir / Steps to reproduce
+      placeholder: |
+        1. Abrir Filmes
+        2. Escolher o filtro de gênero...
+        3. ...
+  - type: textarea
+    id: log
+    attributes:
+      label: Log do console / Console log
+      description: |
+        Se o app travar ou der erro, copie a saída do console. Em um computador na mesma rede, rode
+        `telnet IP_DO_ROKU 8085` (ou `bash -c 'exec 3<>/dev/tcp/IP_DO_ROKU/8085; cat <&3'`), reproduza o erro e cole aqui.
+        Antes de colar, apague qualquer endereço de addon que apareça no log.
+      render: shell
+  - type: textarea
+    id: extra
+    attributes:
+      label: Fotos ou informações extras / Screenshots or extra info
+      description: Uma foto da tela da TV ajuda muito. Evite capas de filmes sempre que der.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmações / Confirmations
+      options:
+        - label: Não incluí nomes ou links de addons que forneçam conteúdo pirata / I did not include names or links of addons providing pirated content
+          required: true

@@ -1,0 +1,33 @@
+name: Sugerir função / Feature request
+description: Uma ideia para melhorar o Kinora / An idea to improve Kinora
+title: "[Ideia] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sugestões são bem-vindas! Lembre que o Kinora é um projeto de estudo, mantido no tempo livre.
+        Suggestions are welcome! Kinora is a hobby project maintained in spare time.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve? / What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Como você imagina a solução? / How do you imagine the solution?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que você considerou / Alternatives you considered
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmações / Confirmations
+      options:
+        - label: Não estou pedindo função que facilite pirataria / I am not requesting a feature meant to facilitate piracy
+          required: true

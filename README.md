@@ -9,7 +9,7 @@ busca, temporadas/episódios, escolha de fonte, player e "Continuar assistindo".
 2. Gere o pacote (o `manifest` precisa ficar na raiz do zip):
    ```
    cd kinora-canal-roku
-   zip -r ../kinora.zip . -x "README.md" ".gitignore" ".git/*"
+   zip -r ../kinora.zip . -x "README.md" "CHANGELOG.md" ".gitignore" ".git/*" ".github/*"
    ```
 3. Envie por `http://IP_DO_ROKU` (Upload > Install), ou por terminal:
    ```
@@ -108,6 +108,12 @@ fonts/       Poppins (Regular, Medium, Bold)
   e o usuário é responsável por usar apenas conteúdo que tenha direito de assistir.
 - Os dados salvos (addons, ajustes, histórico) ficam no registry do Roku na seção `kinora`; dados de versões antigas
   (seções `vitrine` e `brightscript`) são lidos automaticamente.
+
+## Relatar erros e sugerir funções
+
+Use as abas **Issues** (modelos prontos pedem o modelo do Roku, a versão do sistema e o log do console)
+e **Discussions** do repositório. Não cite nomes nem links de addons que forneçam conteúdo pirata:
+esses relatos serão fechados. O projeto não ajuda a encontrar addons ou fontes de vídeo.
 
 ## Status
 
