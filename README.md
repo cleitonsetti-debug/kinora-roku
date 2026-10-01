@@ -9,7 +9,7 @@ busca, temporadas/episódios, escolha de fonte, player e "Continuar assistindo".
 2. Gere o pacote (o `manifest` precisa ficar na raiz do zip):
    ```
    cd kinora-canal-roku
-   zip -r ../kinora.zip . -x "*.md" "LICENSE" ".gitignore" "fonts/OFL.txt" ".git/*"
+   zip -r ../kinora.zip . -x "README.md" ".gitignore" ".git/*"
    ```
 3. Envie por `http://IP_DO_ROKU` (Upload > Install), ou por terminal:
    ```
