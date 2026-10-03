@@ -13,13 +13,17 @@
         </Label>
         <LabelList id="list"
             translation="[100, 220]"
-            itemSize="[1700, 64]"
+            itemSize="[1000, 64]"
             numRows="10"
             textHorizOffset="28"
             color="0xD8D8E0FF"
             focusedColor="0x0A0A0DFF"
             focusBitmapUri="pkg:/images/pill_white.9.png"
             focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
+        <Rectangle translation="[1150, 220]" width="700" height="640" color="0x14141AFF"/>
+        <Label id="detailLabel" text="" translation="[1180, 244]" width="640" height="592" wrap="true" maxLines="18" color="0xD8D8E0FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
+        </Label>
         <Label id="hintLabel" text="" translation="[100, 940]" width="1700" color="0xC9C9D2FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
         </Label>

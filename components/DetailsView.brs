@@ -71,6 +71,7 @@ sub refreshMetaLine()
     parts = []
     k = kindSingular(asStr(m.info.kind))
     if k <> "" then parts.push(k)
+    if asStr(m.info.cert) <> "" then parts.push(asStr(m.info.cert))
     if asStr(m.info.year) <> "" then parts.push(asStr(m.info.year))
     if asStr(m.info.rating) <> "" then parts.push("IMDb " + asStr(m.info.rating))
     if asStr(m.info.genres) <> "" then parts.push(asStr(m.info.genres))
@@ -94,6 +95,7 @@ sub onItem()
 
     if asStr(it.kind) = "movie" then
         showSingle()
+        loadMeta()
     else
         m.mode = "loading"
         m.watchBtn.visible = false
@@ -123,6 +125,7 @@ sub loadMeta()
     base = findMetaBase(m.global.addons, asStr(m.info.kind), asStr(m.info.id), asStr(m.info.addon))
     if base = "" then
         showSingle()
+        if asStr(m.info.description) = "" then m.descLabel.text = i18n("no_synopsis")
         return
     end if
     url = base + "/meta/" + urlEncode(asStr(m.info.kind)) + "/" + urlEncode(asStr(m.info.id)) + ".json"
@@ -143,14 +146,27 @@ sub onMetaResult(event as Object)
         end if
     end if
 
-    if m.episodes.count() > 0 then
+    if m.episodes.count() > 0 and asStr(m.info.kind) <> "movie" then
         showEpisodes()
     else
         showSingle()
     end if
+
+    if asStr(m.info.description) = "" then m.descLabel.text = i18n("no_synopsis")
 end sub
 
+' Classificacao indicativa, quando o addon a fornece (Cinemeta nao traz)
+function metaCertification(meta as Object) as String
+    for each k in ["certification", "contentRating", "ageRating", "rated", "mpaa", "classification"]
+        v = asStr(meta[k])
+        if v <> "" then return v
+    end for
+    return ""
+end function
+
 sub updateFromMeta(meta as Object)
+    cert = metaCertification(meta)
+    if cert <> "" then m.info.cert = cert
     d = asStr(meta.description)
     if d <> "" then
         m.info.description = d
@@ -195,14 +211,18 @@ sub parseEpisodes(videos as Dynamic)
     end if
 end sub
 
-' Proximo episodio (ordem temporada/episodio, ignorando especiais)
-function findNextEpisode(videoId as String) as Dynamic
-    if m.episodes.count() = 0 then return invalid
+' Episodios em ordem temporada/episodio, sem especiais
+function orderedEpisodes() as Object
     ordered = []
     for each ep in m.episodes
-        ordered.push({ id: ep.id, season: ep.season, episode: ep.episode, ord: ep.season * 100000 + ep.episode })
+        if ep.season > 0 then ordered.push({ id: ep.id, season: ep.season, episode: ep.episode, title: ep.title, ord: ep.season * 100000 + ep.episode })
     end for
     sortByNumber(ordered, "ord")
+    return ordered
+end function
+
+function findNextEpisode(videoId as String) as Dynamic
+    ordered = orderedEpisodes()
     found = -1
     for i = 0 to ordered.count() - 1
         if ordered[i].id = videoId then
@@ -211,9 +231,7 @@ function findNextEpisode(videoId as String) as Dynamic
         end if
     end for
     if found < 0 then return invalid
-    for j = found + 1 to ordered.count() - 1
-        if ordered[j].season > 0 then return ordered[j]
-    end for
+    if found + 1 < ordered.count() then return ordered[found + 1]
     return invalid
 end function
 
@@ -314,97 +332,25 @@ sub onWatchPressed()
 end sub
 
 ' ---------------------------------------------------------------------------
-' Fontes de video (addons com o recurso "stream")
+' Fontes de video (addons com o recurso "stream") - ver source/Streams.brs
 ' ---------------------------------------------------------------------------
 sub startStreams(videoId as String, epLabel as String, season as Integer, episode as Integer)
     m.pendingPlay = { videoId: videoId, label: epLabel, season: season, episode: episode }
-    m.streamGen = m.streamGen + 1
-    m.found = []
     m.streams = []
-    m.unsupported = 0
     m.panelOpen = true
     m.panel.visible = true
     m.panelTitle.text = i18n("panel_searching")
     m.streamList.content = CreateObject("roSGNode", "ContentNode")
     m.streamList.setFocus(true)
-
-    kind = asStr(m.info.kind)
-    sources = []
-    for each a in m.global.addons
-        if addonSupportsResource(a, "stream", kind, videoId) then sources.push(a)
-    end for
-
-    m.streamPending = sources.count()
-    if m.streamPending = 0 then
-        finishStreams()
-        return
-    end if
-
-    for each a in sources
-        url = a.url + "/stream/" + urlEncode(kind) + "/" + urlEncode(videoId) + ".json"
-        startJson(url, "onStreamResult", { gen: m.streamGen, addon: a.name })
-    end for
+    streamsBegin(asStr(m.info.kind), videoId)
 end sub
 
-function streamHeaders(s as Object) as Object
-    out = []
-    bh = s.behaviorHints
-    if Type(bh) = "roAssociativeArray" then
-        ph = bh.proxyHeaders
-        if Type(ph) = "roAssociativeArray" then
-            rq = ph.request
-            if Type(rq) = "roAssociativeArray" then
-                for each k in rq
-                    out.push(k + ": " + asStr(rq[k]))
-                end for
-            end if
-        end if
-    end if
-    return out
-end function
-
-sub addStream(s as Object, addonName as String)
-    url = asStr(s.url)
-    if url <> "" and startsWith(LCase(url), "http") then
-        nm = replaceAll(asStr(s.name), Chr(10), " ")
-        tt = asStr(s.title)
-        if tt = "" then tt = asStr(s.description)
-        tt = replaceAll(tt, Chr(10), " | ")
-        label = "[" + addonName + "] "
-        if nm <> "" then label = label + nm + "  "
-        label = label + tt
-        if Len(label) > 120 then label = Left(label, 117) + "..."
-        m.found.push({ url: url, title: label, headers: streamHeaders(s) })
-    else
-        m.unsupported = m.unsupported + 1
-    end if
-end sub
-
-sub onStreamResult(event as Object)
-    task = event.getRoSGNode()
-    ctx = task.context
-    res = event.getData()
-    releaseTask(task)
-    if ctx.gen <> m.streamGen then return
-
-    if res.ok = true and Type(res.data) = "roAssociativeArray" then
-        list = res.data.streams
-        if Type(list) = "roArray" then
-            for each s in list
-                if Type(s) = "roAssociativeArray" then addStream(s, ctx.addon)
-            end for
-        end if
-    end if
-
-    m.streamPending = m.streamPending - 1
-    if m.streamPending <= 0 then finishStreams()
-end sub
-
-sub finishStreams()
+' Chamado pela biblioteca quando termina a busca de fontes
+sub onStreamsReady()
     realCount = m.found.count()
     m.streams = m.found
     ' Video de teste sempre no fim da lista, para validar o player
-    m.streams.push({ url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", title: i18n("demo_title"), headers: [], demo: true })
+    m.streams.push({ url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", title: i18n("demo_title"), headers: [], demo: true, addonName: i18n("demo_addon"), addonUrl: "", subs: [] })
 
     content = CreateObject("roSGNode", "ContentNode")
     for each s in m.streams
@@ -448,6 +394,9 @@ sub playStreamAt(idx as Integer)
         season: m.pendingPlay.season
         episode: m.pendingPlay.episode
         nextEp: findNextEpisode(m.pendingPlay.videoId)
+        playlist: orderedEpisodes()
+        source: { addonName: s.addonName, addonUrl: s.addonUrl, label: s.title }
+        subs: s.subs
     }
 end sub
 

@@ -5,7 +5,7 @@
 
 sub init()
     st = loadSettings()
-    m.global.addFields({ addons: [], addonsRev: 0, historyRev: 0, lang: st.lang, optResume: st.resume, optAutoPick: st.autoPick })
+    m.global.addFields({ addons: [], addonsRev: 0, historyRev: 0, lang: st.lang, optResume: st.resume, optAutoPick: st.autoPick, optSubLang: st.subLang, optAudioLang: st.audioLang, optAutoNext: st.autoNext, optIntro: st.intro })
     m.stack = []
     m.tasks = []
     m.started = false

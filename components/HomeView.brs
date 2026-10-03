@@ -17,6 +17,12 @@ sub init()
     m.debounce = m.top.findNode("debounce")
     m.heroTimer = m.top.findNode("heroTimer")
     m.heroBackdrop = m.top.findNode("heroBackdrop")
+    m.heroBackdropB = m.top.findNode("heroBackdropB")
+    m.fadeIn = m.top.findNode("fadeIn")
+    m.fadeOut = m.top.findNode("fadeOut")
+    m.dots = m.top.findNode("dots")
+    m.heroBtn = m.top.findNode("heroBtn")
+    m.carouselTimer = m.top.findNode("carouselTimer")
     m.heroTitle = m.top.findNode("heroTitle")
     m.heroMeta = m.top.findNode("heroMeta")
     m.heroDesc = m.top.findNode("heroDesc")
@@ -42,6 +48,17 @@ sub init()
     m.rowHasTitle = []
     m.curRow = 0
     m.pendingHero = invalid
+    m.heroId = ""
+    m.curBackdrop = ""
+    m.frontIsB = false
+    m.fading = false
+    m.fadeStall = 0
+    m.queuedBackdrop = ""
+    m.fadeTarget = invalid
+    m.featured = []
+    m.fIdx = 0
+    m.metaCache = {}
+    m.metaPending = {}
     m.fState = { movie: { cat: -1, genre: "" }, series: { cat: -1, genre: "" } }
     m.menuKeys = ["home", "movies", "series", "search", "addons", "settings"]
     m.uiLang = ""
@@ -54,7 +71,17 @@ sub init()
     m.filterList.observeField("itemSelected", "onPickerSelected")
     m.debounce.observeField("fire", "onDebounce")
     m.heroTimer.observeField("fire", "onHeroTimer")
+    m.carouselTimer.observeField("fire", "onCarousel")
+    m.heroBackdrop.observeField("loadStatus", "onBackdropLoaded")
+    m.heroBackdropB.observeField("loadStatus", "onBackdropLoaded")
+    m.fadeIn.observeField("state", "onFadeState")
+    m.fadeOut.observeField("state", "onFadeState")
+    setupHeroBtn()
     moveIndicator("home")
+end sub
+
+sub setupHeroBtn()
+    m.heroBtn.text = i18n("hero_details")
 end sub
 
 sub rebuildNav()
@@ -75,6 +102,7 @@ sub focusView()
     if m.category = "home" and m.global.historyRev <> m.loadedHist then stale = true
     if m.uiLang <> m.global.lang then
         rebuildNav()
+        setupHeroBtn()
         stale = true
     end if
     if stale then loadCategory(m.category)
@@ -85,6 +113,8 @@ sub focusView()
         focusRows()
     else if m.focusArea = "filters" and m.filterBar.visible then
         m.filterBar.setFocus(true)
+    else if m.focusArea = "hero" and m.featured.count() > 0 then
+        m.heroBtn.setFocus(true)
     else
         m.focusArea = "nav"
         m.nav.setFocus(true)
@@ -138,17 +168,42 @@ end sub
 sub focusRows()
     if m.rowViews.count() = 0 then return
     m.focusArea = "rows"
+    refreshHeroChrome()
     m.rowViews[m.curRow].callFunc("focusRow")
+    info = m.rowViews[m.curRow].callFunc("currentInfo")
+    if info <> invalid then setHero(info, false)
 end sub
 
 sub focusNav()
     m.focusArea = "nav"
     m.nav.setFocus(true)
+    onTopFocus()
+end sub
+
+sub focusHero()
+    m.focusArea = "hero"
+    refreshHeroChrome()
+    m.heroBtn.setFocus(true)
+    onTopFocus()
 end sub
 
 sub focusFilters()
     m.focusArea = "filters"
     m.filterBar.setFocus(true)
+    onTopFocus()
+end sub
+
+' Foco voltou para a barra/filtros: retoma o carrossel de destaques
+sub onTopFocus()
+    refreshHeroChrome()
+    if m.featured.count() > 0 then setHero(m.featured[m.fIdx], true)
+end sub
+
+sub refreshHeroChrome()
+    carousel = (m.focusArea <> "rows")
+    m.dots.visible = (m.featured.count() > 1 and carousel)
+    m.heroBtn.visible = (m.featured.count() > 0 and carousel)
+    m.heroBtn.active = (m.focusArea = "hero")
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
@@ -162,20 +217,40 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         return false
     end if
 
+    hasHero = (m.featured.count() > 0)
+
+    if key = "play" and m.focusArea <> "rows" and hasHero then
+        m.top.itemSelected = m.featured[m.fIdx]
+        return true
+    end if
+    if key = "OK" and m.focusArea = "hero" and hasHero then
+        m.top.itemSelected = m.featured[m.fIdx]
+        return true
+    end if
+
     if key = "down" then
         if m.focusArea = "rows" then
             moveRow(1)
             return true
+        else if m.focusArea = "hero" then
+            if m.hasRows then focusRows()
+            return true
         else if m.nav.hasFocus() then
             if m.filterBar.visible then
                 focusFilters()
+                return true
+            else if hasHero then
+                focusHero()
                 return true
             else if m.hasRows then
                 focusRows()
                 return true
             end if
         else if m.filterBar.hasFocus() then
-            if m.hasRows then
+            if hasHero then
+                focusHero()
+                return true
+            else if m.hasRows then
                 focusRows()
                 return true
             end if
@@ -184,7 +259,16 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         if m.focusArea = "rows" then
             if m.curRow > 0 then
                 moveRow(-1)
+            else if hasHero then
+                focusHero()
             else if m.filterBar.visible then
+                focusFilters()
+            else
+                focusNav()
+            end if
+            return true
+        else if m.focusArea = "hero" then
+            if m.filterBar.visible then
                 focusFilters()
             else
                 focusNav()
@@ -195,7 +279,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             return true
         end if
     else if key = "back" then
-        if m.focusArea = "rows" or m.filterBar.hasFocus() then
+        if m.focusArea = "rows" or m.focusArea = "hero" or m.filterBar.hasFocus() then
             focusNav()
             return true
         end if
@@ -267,7 +351,7 @@ sub moveRow(delta as Integer)
     layoutRows()
     focusRows()
     info = m.rowViews[n].callFunc("currentInfo")
-    if info <> invalid then setHero(info)
+    if info <> invalid then setHero(info, false)
 end sub
 
 sub onRowSelected(event as Object)
@@ -287,10 +371,14 @@ end sub
 ' ---------------------------------------------------------------------------
 ' Banner (hero) do item em foco
 ' ---------------------------------------------------------------------------
-sub setHero(info as Object)
+sub setHero(info as Object, animate as Boolean)
     bg = asStr(info.background)
     if bg = "" then bg = asStr(info.poster)
-    m.heroBackdrop.uri = bg
+    setBackdrop(bg, animate)
+    applyHeroInfo(info)
+end sub
+
+sub applyHeroInfo(info as Object)
     m.heroTitle.text = asStr(info.name)
     parts = []
     k = kindSingular(asStr(info.kind))
@@ -306,17 +394,182 @@ sub setHero(info as Object)
     if g <> "" then parts.push(g)
     m.heroMeta.text = joinWith(parts, "  •  ")
     m.heroDesc.text = asStr(info.description)
+
+    ' Sinopse ausente (ou cortada, no caso do historico): busca o meta completo
+    m.heroId = asStr(info.id)
+    if asStr(info.description) = "" or asStr(info.videoId) <> "" then requestHeroMeta(info)
+end sub
+
+' ---------------------------------------------------------------------------
+' Fundo do banner: troca direta ou com fade (camada B sobre a A)
+' ---------------------------------------------------------------------------
+sub setBackdrop(url as String, animate as Boolean)
+    if url = m.curBackdrop then return
+    if url = "" or not animate then
+        setBackdropInstant(url)
+        return
+    end if
+    if m.fading then
+        m.queuedBackdrop = url
+        return
+    end if
+    startFade(url)
+end sub
+
+sub setBackdropInstant(url as String)
+    m.fading = false
+    m.queuedBackdrop = ""
+    m.fadeIn.control = "stop"
+    m.fadeOut.control = "stop"
+    m.heroBackdrop.uri = url
+    m.heroBackdropB.opacity = 0.0
+    m.frontIsB = false
+    m.curBackdrop = url
+end sub
+
+sub startFade(url as String)
+    m.fading = true
+    m.curBackdrop = url
+    if m.frontIsB then
+        m.fadeTarget = m.heroBackdrop
+    else
+        m.fadeTarget = m.heroBackdropB
+    end if
+    if asStr(m.fadeTarget.uri) = url then
+        runFade()
+    else
+        m.fadeTarget.uri = url
+    end if
+end sub
+
+sub runFade()
+    if m.frontIsB then
+        m.fadeOut.control = "start"
+    else
+        m.fadeIn.control = "start"
+    end if
+end sub
+
+sub onBackdropLoaded(event as Object)
+    if not m.fading then return
+    node = event.getRoSGNode()
+    if not node.isSameNode(m.fadeTarget) then return
+    st = node.loadStatus
+    if st = "ready" then
+        runFade()
+    else if st = "failed" then
+        m.fading = false
+        m.curBackdrop = ""
+    end if
+end sub
+
+sub onFadeState(event as Object)
+    if not m.fading then return
+    if event.getData() <> "stopped" then return
+    m.frontIsB = not m.frontIsB
+    m.fading = false
+    if m.queuedBackdrop <> "" then
+        q = m.queuedBackdrop
+        m.queuedBackdrop = ""
+        setBackdrop(q, true)
+    end if
+end sub
+
+' ---------------------------------------------------------------------------
+' Carrossel de destaques (gira sozinho enquanto o foco esta na barra ou nos filtros)
+' ---------------------------------------------------------------------------
+sub onCarousel()
+    if m.fading then
+        m.fadeStall = m.fadeStall + 1
+        if m.fadeStall >= 2 then
+            m.fadeStall = 0
+            setBackdropInstant(m.curBackdrop)
+        end if
+        return
+    end if
+    m.fadeStall = 0
+    if m.focusArea = "rows" or m.panelOpen then return
+    if m.featured.count() < 2 then return
+    m.fIdx = (m.fIdx + 1) mod m.featured.count()
+    setHero(m.featured[m.fIdx], true)
+    updateDots()
+end sub
+
+sub rebuildDots()
+    while m.dots.getChildCount() > 0
+        m.dots.removeChildIndex(0)
+    end while
+    for i = 0 to m.featured.count() - 1
+        r = CreateObject("roSGNode", "Rectangle")
+        r.height = 6
+        m.dots.appendChild(r)
+    end for
+    updateDots()
+end sub
+
+sub updateDots()
+    x = 0
+    for i = 0 to m.dots.getChildCount() - 1
+        r = m.dots.getChild(i)
+        w = 12
+        r.color = "0x6A6A75FF"
+        if i = m.fIdx then
+            w = 34
+            r.color = "0xFFFFFFFF"
+        end if
+        r.width = w
+        r.translation = [x, 0]
+        x = x + w + 8
+    end for
+end sub
+
+sub requestHeroMeta(info as Object)
+    id = asStr(info.id)
+    if id = "" then return
+    cached = m.metaCache[id]
+    if cached <> invalid then
+        applyHeroMeta(cached)
+        return
+    end if
+    if m.metaPending[id] <> invalid then return
+    base = findMetaBase(m.global.addons, asStr(info.kind), id, asStr(info.addon))
+    if base = "" then return
+    m.metaPending[id] = true
+    startJson(base + "/meta/" + urlEncode(asStr(info.kind)) + "/" + urlEncode(id) + ".json", "onHeroMeta", { id: id })
+end sub
+
+sub onHeroMeta(event as Object)
+    task = event.getRoSGNode()
+    ctx = task.context
+    res = event.getData()
+    releaseTask(task)
+    m.metaPending.delete(ctx.id)
+
+    entry = { description: "" }
+    if res.ok = true and Type(res.data) = "roAssociativeArray" then
+        meta = res.data.meta
+        if Type(meta) = "roAssociativeArray" then entry.description = asStr(meta.description)
+    end if
+    m.metaCache[ctx.id] = entry
+    if ctx.id = m.heroId then applyHeroMeta(entry)
+end sub
+
+sub applyHeroMeta(entry as Object)
+    d = asStr(entry.description)
+    if d = "" then d = i18n("no_synopsis")
+    m.heroDesc.text = d
 end sub
 
 sub clearHero()
-    m.heroBackdrop.uri = ""
+    m.heroId = ""
+    setBackdropInstant("")
     m.heroTitle.text = ""
     m.heroMeta.text = ""
     m.heroDesc.text = ""
 end sub
 
 sub onHeroTimer()
-    if m.pendingHero <> invalid then setHero(m.pendingHero)
+    if m.pendingHero <> invalid then setHero(m.pendingHero, false)
 end sub
 
 ' ---------------------------------------------------------------------------
@@ -502,7 +755,8 @@ sub loadCategory(cat as String)
 
     catalogs = []
     if kind = "" then
-        catalogs = listCatalogs(m.global.addons, "", false, 10)
+        catalogs = listCatalogs(m.global.addons, "", false, 6)
+        addGenreRows(catalogs)
     else
         st = m.fState[kind]
         if st.cat >= 0 then
@@ -553,6 +807,39 @@ sub loadCategory(cat as String)
     end for
 end sub
 
+' Linhas extras de filmes por genero na tela inicial (Acao, Comedia, Terror, Ficcao...)
+sub addGenreRows(catalogs as Object)
+    pick = invalid
+    for each c in listFilterCatalogs(m.global.addons, "movie")
+        if c.hasGenre = true and c.genreReq <> true and c.genres.count() > 0 then
+            pick = c
+            exit for
+        end if
+    end for
+    if pick = invalid then return
+
+    chosen = []
+    for each w in ["action", "comedy", "horror", "sci-fi", "drama"]
+        for each g in pick.genres
+            if LCase(g) = w then
+                chosen.push(g)
+                exit for
+            end if
+        end for
+        if chosen.count() >= 4 then exit for
+    end for
+    if chosen.count() = 0 then
+        for each g in pick.genres
+            chosen.push(g)
+            if chosen.count() >= 4 then exit for
+        end for
+    end if
+
+    for each g in chosen
+        catalogs.push({ base: pick.base, kind: "movie", id: pick.id, title: kindLabel("movie") + " - " + genreLabel(g), extra: "genre=" + urlEncode(g), hasGenre: true })
+    end for
+end sub
+
 sub onCatalogResult(event as Object)
     task = event.getRoSGNode()
     ctx = task.context
@@ -589,7 +876,7 @@ sub finishLoad()
             end if
         end for
         if nodes.count() > 0 then
-            defs.push({ title: i18n("continue_watching"), nodes: nodes })
+            defs.push({ title: i18n("continue_watching"), nodes: nodes, isHistory: true })
             firstInfo = nodes[0].info
         end if
     end if
@@ -626,9 +913,32 @@ sub finishLoad()
 
     buildRows(defs)
 
+    ' Destaques do carrossel: ate 2 titulos (com imagem de fundo) de cada linha de catalogo
+    feats = []
+    for each d in defs
+        if d.isHistory <> true then
+            taken = 0
+            for each n in d.nodes
+                inf = n.info
+                if asStr(inf.background) <> "" and taken < 2 and feats.count() < 8 then
+                    feats.push(inf)
+                    taken = taken + 1
+                end if
+            end for
+        end if
+    end for
+    m.featured = feats
+    m.fIdx = 0
+    rebuildDots()
+
     if m.hasRows then
         m.status.visible = false
-        if firstInfo <> invalid then setHero(firstInfo)
+        if feats.count() > 0 then
+            setHero(feats[0], false)
+        else if firstInfo <> invalid then
+            setHero(firstInfo, false)
+        end if
+        refreshHeroChrome()
     else
         m.status.text = emptyMessage()
         m.status.visible = true

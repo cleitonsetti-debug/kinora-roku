@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="PlayerButton" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChange"/>
+        <field id="width" type="float" onChange="onLayout"/>
+        <field id="height" type="float" onChange="onLayout"/>
+    </interface>
+    <children>
+        <Poster id="icon" translation="[37, 12]" width="56" height="56" loadDisplayMode="scaleToFit"/>
+        <Label id="label" translation="[0, 76]" width="130" height="30" horizAlign="center" vertAlign="top" maxLines="1" color="0xE6E6EEFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="17"/>
+        </Label>
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/PlayerButton.brs"/>
+</component>

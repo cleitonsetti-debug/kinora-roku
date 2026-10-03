@@ -64,6 +64,19 @@ fonts/       Poppins (Regular, Medium, Bold)
 - Addons, catálogos, metadados, episódios e streams vêm de dados reais em vez de listas mockadas.
 - `.env`, `CLAUDE.md`, `.bak` e `index.html` ficaram de fora do pacote.
 
+## Novidades da v1.3
+
+- **Player próprio:** Baixo mostra os controles (progresso, -10 s, pausar, +10 s, legendas, áudio, próximo episódio e
+  detalhes do addon/fonte); OK pausa e Esquerda/Direita pulam 10 s com os controles escondidos. Legendas do stream e de
+  addons `subtitles`, faixas de áudio e episódios seguintes automáticos.
+- **Destaques:** o banner da tela inicial gira sozinho entre títulos em destaque, como nos serviços de streaming, com um botão **Detalhes**.
+- **Barra de tempo:** Esquerda/Direita no player abrem a barra e movem o ponto com passos que aceleram; OK confirma, Voltar cancela, e parado por 3 s confirma sozinho.
+- **Ficha ao iniciar:** título, nota do IMDb e classificação indicativa (se o addon fornecer) aparecem por alguns segundos; dá para desligar em Ajustes.
+- **Player com ícones:** botões com ícone, barra de progresso arredondada e ícone grande de pausa no centro.
+- **Ajustes:** idioma preferido da legenda e do áudio, e próximo episódio automático.
+- **Addons:** painel de detalhes de cada addon.
+- **Tela inicial:** linhas de filmes por gênero; sinopse buscada sob demanda quando falta.
+
 ## Novidades da v1.2
 
 - **Continuar assistindo para séries:** a série fica na lista mesmo ao terminar um episódio, apontando para o PRÓXIMO

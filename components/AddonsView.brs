@@ -7,7 +7,9 @@ sub init()
     m.hint = m.top.findNode("hintLabel")
     m.tasks = []
     m.dlg = invalid
+    m.detail = m.top.findNode("detailLabel")
     m.list.observeField("itemSelected", "onListSelected")
+    m.list.observeField("itemFocused", "onItemFocused")
     renderList()
 end sub
 
@@ -23,7 +25,7 @@ function addonLine(a as Object) as String
     else if a.enabled <> true then
         st = i18n("state_off")
     end if
-    return "[" + st + "]  " + a.name + "     " + a.url
+    return "[" + st + "]  " + a.name
 end function
 
 sub renderList()
@@ -40,6 +42,22 @@ sub renderList()
     idx = m.list.itemFocused
     m.list.content = content
     if idx > 0 and idx <= addons.count() then m.list.jumpToItem = idx
+    renderDetails()
+end sub
+
+sub onItemFocused()
+    renderDetails()
+end sub
+
+' Detalhes do addon em foco (versao, descricao, tipos, recursos, catalogos, endereco)
+sub renderDetails()
+    addons = m.global.addons
+    idx = m.list.itemFocused
+    if idx > 0 and idx <= addons.count() then
+        m.detail.text = addonDetailsText(addons[idx - 1])
+    else
+        m.detail.text = i18n("ad_help")
+    end if
 end sub
 
 sub onListSelected()

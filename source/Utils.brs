@@ -132,9 +132,14 @@ end sub
 ' Rede: cada requisicao roda em um Task (JsonTask); o resultado volta por callback
 ' ---------------------------------------------------------------------------
 function startJson(url as String, callback as String, context as Object) as Object
+    return startJsonT(url, callback, context, 15000)
+end function
+
+function startJsonT(url as String, callback as String, context as Object, timeoutMs as Integer) as Object
     if m.tasks = invalid then m.tasks = []
     task = CreateObject("roSGNode", "JsonTask")
     task.url = url
+    task.timeoutMs = timeoutMs
     task.context = context
     task.observeField("result", callback)
     m.tasks.push(task)
@@ -197,3 +202,46 @@ function infoToNode(info as Object, label as String) as Object
     return n
 end function
 
+
+' ---------------------------------------------------------------------------
+' Idiomas de faixas (legenda/audio): pref = "pt" | "en" | "es"
+' ---------------------------------------------------------------------------
+function langMatches(code as String, pref as String) as Boolean
+    c = LCase(code)
+    if c = "" then return false
+    if pref = "pt" then return (c = "pt" or startsWith(c, "pt-") or startsWith(c, "pt_") or c = "por" or c = "pob" or c = "pb")
+    if pref = "en" then return (c = "en" or startsWith(c, "en-") or startsWith(c, "en_") or c = "eng")
+    if pref = "es" then return (c = "es" or startsWith(c, "es-") or startsWith(c, "es_") or c = "spa" or c = "esl" or c = "lat")
+    return false
+end function
+
+function toLang3(code as String) as String
+    if langMatches(code, "pt") then return "por"
+    if langMatches(code, "en") then return "eng"
+    if langMatches(code, "es") then return "spa"
+    c = LCase(code)
+    if c = "" then return "und"
+    return c
+end function
+
+function langName(code as String) as String
+    if langMatches(code, "pt") then return "Português"
+    if langMatches(code, "en") then return "English"
+    if langMatches(code, "es") then return "Español"
+    if code = "" then return "?"
+    return UCase(code)
+end function
+
+function pad2(n as Integer) as String
+    return Right("0" + Str(n).trim(), 2)
+end function
+
+' 3725 -> "1:02:05" ; 125 -> "2:05"
+function formatTime(totalSec as Integer) as String
+    if totalSec < 0 then totalSec = 0
+    h = totalSec \ 3600
+    mi = (totalSec mod 3600) \ 60
+    sc = totalSec mod 60
+    if h > 0 then return Str(h).trim() + ":" + pad2(mi) + ":" + pad2(sc)
+    return Str(mi).trim() + ":" + pad2(sc)
+end function

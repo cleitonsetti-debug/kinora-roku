@@ -84,5 +84,6 @@
     <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>
     <script type="text/brightscript" uri="pkg:/source/Storage.brs"/>
     <script type="text/brightscript" uri="pkg:/source/AddonStore.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/Streams.brs"/>
     <script type="text/brightscript" uri="pkg:/components/DetailsView.brs"/>
 </component>

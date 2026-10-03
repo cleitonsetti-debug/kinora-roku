@@ -21,6 +21,26 @@ function yesNo(v as Dynamic) as String
     return i18n("no")
 end function
 
+function subLangLabel() as String
+    v = m.global.optSubLang
+    if v = "off" then return i18n("opt_off")
+    return i18n("lang_opt_" + v)
+end function
+
+function audioLangLabel() as String
+    v = m.global.optAudioLang
+    if v = "auto" then return i18n("opt_auto")
+    return i18n("lang_opt_" + v)
+end function
+
+' Proximo valor de uma lista de opcoes (volta ao inicio no fim)
+function nextOption(current as String, options as Object) as String
+    for i = 0 to options.count() - 1
+        if options[i] = current then return options[(i + 1) mod options.count()]
+    end for
+    return options[0]
+end function
+
 sub renderList()
     m.top.findNode("titleLabel").text = i18n("settings_title")
     m.top.findNode("topHint").text = i18n("settings_hint")
@@ -28,6 +48,10 @@ sub renderList()
         i18n("set_language") + ":   " + i18n("lang_name")
         i18n("set_resume") + ":   " + yesNo(m.global.optResume)
         i18n("set_autopick") + ":   " + yesNo(m.global.optAutoPick)
+        i18n("set_sublang") + ":   " + subLangLabel()
+        i18n("set_audiolang") + ":   " + audioLangLabel()
+        i18n("set_autonext") + ":   " + yesNo(m.global.optAutoNext)
+        i18n("set_intro") + ":   " + yesNo(m.global.optIntro)
         i18n("set_clear_history")
         i18n("set_reset_addons")
         i18n("set_about")
@@ -55,10 +79,26 @@ sub onSelected()
         persistSettings()
         renderList()
     else if idx = 3 then
-        askConfirm("history", i18n("confirm_clear_history"))
+        m.global.optSubLang = nextOption(m.global.optSubLang, ["off", "pt", "en", "es"])
+        persistSettings()
+        renderList()
     else if idx = 4 then
-        askConfirm("addons", i18n("confirm_reset_addons"))
+        m.global.optAudioLang = nextOption(m.global.optAudioLang, ["auto", "pt", "en", "es"])
+        persistSettings()
+        renderList()
     else if idx = 5 then
+        m.global.optAutoNext = not (m.global.optAutoNext = true)
+        persistSettings()
+        renderList()
+    else if idx = 6 then
+        m.global.optIntro = not (m.global.optIntro = true)
+        persistSettings()
+        renderList()
+    else if idx = 7 then
+        askConfirm("history", i18n("confirm_clear_history"))
+    else if idx = 8 then
+        askConfirm("addons", i18n("confirm_reset_addons"))
+    else if idx = 9 then
         ai = CreateObject("roAppInfo")
         showMessage(i18n("about_title"), i18n("about_body") + "  [" + ai.GetVersion() + "]")
     end if

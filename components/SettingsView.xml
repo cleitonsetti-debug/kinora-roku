@@ -15,7 +15,7 @@
         <LabelList id="list"
             translation="[100, 220]"
             itemSize="[1700, 64]"
-            numRows="8"
+            numRows="10"
             textHorizOffset="28"
             color="0xD8D8E0FF"
             focusedColor="0x0A0A0DFF"

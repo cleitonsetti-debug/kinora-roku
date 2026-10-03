@@ -226,3 +226,48 @@ function listFilterCatalogs(addons as Object, kind as String) as Object
     end for
     return out
 end function
+
+function findAddon(url as String) as Dynamic
+    for each a in m.global.addons
+        if a.url = url then return a
+    end for
+    return invalid
+end function
+
+' Texto de detalhes de um addon (varias linhas)
+function addonDetailsText(a as Object) as String
+    lines = []
+    st = i18n("state_on")
+    if a.ok <> true then
+        st = i18n("state_err")
+    else if a.enabled <> true then
+        st = i18n("state_off")
+    end if
+    lines.push(a.name + "  [" + st + "]")
+
+    if a.ok = true then
+        mf = a.manifest
+        v = asStr(mf.version)
+        if v <> "" then lines.push(i18n("ad_version") + ": " + v)
+        d = asStr(mf.description)
+        if d = "" then d = i18n("ad_nodesc")
+        if Len(d) > 220 then d = Left(d, 217) + "..."
+        lines.push(d)
+        t = joinList(mf.types, 8)
+        if t <> "" then lines.push(i18n("ad_types") + ": " + t)
+        names = []
+        if Type(mf.resources) = "roArray" then
+            for each r in mf.resources
+                if Type(r) = "roAssociativeArray" then
+                    names.push(asStr(r.name))
+                else
+                    names.push(asStr(r))
+                end if
+            end for
+        end if
+        if names.count() > 0 then lines.push(i18n("ad_resources") + ": " + joinWith(names, ", "))
+        if Type(mf.catalogs) = "roArray" then lines.push(i18n("ad_catalogs") + ": " + Str(mf.catalogs.count()).trim())
+    end if
+    lines.push(i18n("ad_url") + ": " + a.url)
+    return joinWith(lines, Chr(10))
+end function
