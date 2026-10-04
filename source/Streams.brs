@@ -15,7 +15,7 @@ sub streamsBegin(kind as String, videoId as String)
 
     m.streamPending = sources.count()
     if m.streamPending = 0 then
-        onStreamsReady()
+        streamsDone()
         return
     end if
 
@@ -64,7 +64,7 @@ sub addStream(s as Object, addonName as String, addonUrl as String)
             end for
         end if
 
-        m.found.push({ url: url, title: label, headers: streamHeaders(s), addonName: addonName, addonUrl: addonUrl, subs: subs })
+        m.found.push({ url: url, title: label, headers: streamHeaders(s), addonName: addonName, addonUrl: addonUrl, subs: subs, quality: streamQuality(label + " " + nm), rk: 0 })
     else
         m.unsupported = m.unsupported + 1
     end if
@@ -87,5 +87,24 @@ sub onStreamResult(event as Object)
     end if
 
     m.streamPending = m.streamPending - 1
-    if m.streamPending <= 0 then onStreamsReady()
+    if m.streamPending <= 0 then streamsDone()
+end sub
+
+' Fim da busca: ordena pela qualidade preferida e avisa o componente
+sub streamsDone()
+    sortStreamsByQuality()
+    onStreamsReady()
+end sub
+
+' Qualidade preferida: as fontes mais proximas dela vem primeiro (ex.: 1080 -> 1080, 720, 480, 4K)
+sub sortStreamsByQuality()
+    pref = m.global.optQuality
+    if pref = "auto" or pref = invalid then return
+    target = Val(pref)
+    for each s in m.found
+        key = 2000
+        if s.quality > 0 then key = Abs(s.quality - target)
+        s.rk = key
+    end for
+    sortByNumber(m.found, "rk")
 end sub

@@ -6,11 +6,18 @@
 
 sub init()
     m.backdrop = m.top.findNode("backdrop")
+    m.backdropUri = ""
+    m.top.observeField("visible", "onVisibleChange")
     m.titleLabel = m.top.findNode("titleLabel")
     m.metaLabel = m.top.findNode("metaLabel")
     m.descLabel = m.top.findNode("descLabel")
     m.infoLabel = m.top.findNode("infoLabel")
     m.watchBtn = m.top.findNode("watchBtn")
+    m.listBtn = m.top.findNode("listBtn")
+    m.glow = m.top.findNode("glow")
+    m.forceAuto = false
+    m.preferSrc = ""
+    m.castLabel = m.top.findNode("castLabel")
     m.seasonRow = m.top.findNode("seasonRow")
     m.episodeRow = m.top.findNode("episodeRow")
     m.panel = m.top.findNode("panel")
@@ -20,7 +27,9 @@ sub init()
     m.tasks = []
     m.info = invalid
     m.mode = "loading"
-    m.lastList = "seasons"
+    m.area = "buttons"
+    m.btnIdx = 0
+    m.realCount = 0
     m.episodes = []
     m.seasons = []
     m.seasonEps = []
@@ -33,12 +42,10 @@ sub init()
     m.unsupported = 0
     m.panelOpen = false
 
-    btn = CreateObject("roSGNode", "ContentNode")
-    b = btn.createChild("ContentNode")
-    b.title = i18n("details_watch")
-    m.watchBtn.content = btn
+    m.watchBtn.text = i18n("details_watch")
+    m.watchBtn.icon = "ic_play"
+    refreshListBtn()
 
-    m.watchBtn.observeField("itemSelected", "onWatchPressed")
     m.seasonRow.observeField("rowItemFocused", "onSeasonFocused")
     m.seasonRow.observeField("rowItemSelected", "onSeasonSelected")
     m.episodeRow.observeField("rowItemFocused", "onEpisodeFocused")
@@ -52,16 +59,59 @@ end sub
 
 sub applyFocus()
     if m.panelOpen then
+        setButtonsActive(false)
         m.streamList.setFocus(true)
     else if m.mode = "episodes" then
-        if m.lastList = "episodes" then
+        if m.area = "episodes" then
+            setButtonsActive(false)
             m.episodeRow.setFocus(true)
-        else
+        else if m.area = "seasons" then
+            setButtonsActive(false)
             m.seasonRow.setFocus(true)
+        else
+            focusButton(1)
         end if
     else if m.mode = "single" then
-        m.watchBtn.setFocus(true)
+        focusButton(m.btnIdx)
     end if
+end sub
+
+' Botoes "Assistir" e "Minha lista": o estado visual (ativo) e controlado aqui
+sub refreshListBtn()
+    fav = false
+    if m.info <> invalid then fav = isFavorite(asStr(m.info.id))
+    if fav then
+        m.listBtn.text = i18n("details_in_list")
+        m.listBtn.icon = "ic_check"
+    else
+        m.listBtn.text = i18n("my_list")
+        m.listBtn.icon = "ic_plus"
+    end if
+end sub
+
+sub setButtonsActive(a as Boolean)
+    watchOn = (a and m.btnIdx = 0 and m.watchBtn.visible)
+    m.watchBtn.active = watchOn
+    m.listBtn.active = (a and not watchOn)
+end sub
+
+sub focusButton(idx as Integer)
+    if idx = 0 and not m.watchBtn.visible then idx = 1
+    m.btnIdx = idx
+    m.area = "buttons"
+    setButtonsActive(true)
+    if idx = 0 then
+        m.watchBtn.setFocus(true)
+    else
+        m.listBtn.setFocus(true)
+    end if
+end sub
+
+sub toggleList()
+    if m.info = invalid then return
+    toggleFavorite(m.info)
+    m.global.favRev = m.global.favRev + 1
+    refreshListBtn()
 end sub
 
 ' ---------------------------------------------------------------------------
@@ -73,6 +123,7 @@ sub refreshMetaLine()
     if k <> "" then parts.push(k)
     if asStr(m.info.cert) <> "" then parts.push(asStr(m.info.cert))
     if asStr(m.info.year) <> "" then parts.push(asStr(m.info.year))
+    if asStr(m.info.runtime) <> "" then parts.push(asStr(m.info.runtime))
     if asStr(m.info.rating) <> "" then parts.push("IMDb " + asStr(m.info.rating))
     if asStr(m.info.genres) <> "" then parts.push(asStr(m.info.genres))
     m.metaLabel.text = joinWith(parts, "  •  ")
@@ -82,10 +133,19 @@ sub onItem()
     it = m.top.item
     if it = invalid then return
     m.info = it
+    m.glow.blendColor = accentFor(asStr(it.id))
+    m.glow.visible = (m.global.optAmbient = true)
+    m.forceAuto = (it.autoplay = true)
+    m.preferSrc = asStr(it.src)
+    m.area = "buttons"
+    m.btnIdx = 0
+    m.castLabel.text = ""
+    refreshListBtn()
     m.titleLabel.text = asStr(it.name)
     m.descLabel.text = asStr(it.description)
     bg = asStr(it.background)
     if bg = "" then bg = asStr(it.poster)
+    m.backdropUri = bg
     m.backdrop.uri = bg
     refreshMetaLine()
 
@@ -118,6 +178,8 @@ sub showSingle()
     m.seasonRow.visible = false
     m.episodeRow.visible = false
     m.watchBtn.visible = true
+    m.listBtn.visible = true
+    if m.area <> "buttons" then m.area = "buttons"
     if m.top.visible then applyFocus()
 end sub
 
@@ -167,6 +229,14 @@ end function
 sub updateFromMeta(meta as Object)
     cert = metaCertification(meta)
     if cert <> "" then m.info.cert = cert
+    rt = asStr(meta.runtime)
+    if rt <> "" then m.info.runtime = rt
+    castText = joinList(meta.cast, 4)
+    directors = joinList(meta.director, 2)
+    extra = []
+    if castText <> "" then extra.push(i18n("details_cast") + ": " + castText)
+    if directors <> "" then extra.push(i18n("details_director") + ": " + directors)
+    m.castLabel.text = joinWith(extra, "     |     ")
     d = asStr(meta.description)
     if d <> "" then
         m.info.description = d
@@ -181,6 +251,7 @@ sub updateFromMeta(meta as Object)
     bg = asStr(meta.background)
     if bg <> "" then
         m.info.background = bg
+        m.backdropUri = bg
         m.backdrop.uri = bg
     end if
     refreshMetaLine()
@@ -242,6 +313,8 @@ sub showEpisodes()
     m.mode = "episodes"
     m.infoLabel.visible = false
     m.watchBtn.visible = false
+    m.listBtn.visible = true
+    m.area = "seasons"
 
     sortByNumber(m.episodes, "episode")
     seen = {}
@@ -281,6 +354,13 @@ sub fillEpisodes(seasonIdx as Integer)
     m.seasonEps = []
     if seasonIdx < 0 or seasonIdx >= m.seasons.count() then return
     sn = m.seasons[seasonIdx].season
+    watched = loadWatched()
+    prog = {}
+    for each h in loadHistory()
+        hv = asStr(h.videoId)
+        if hv <> "" then prog[hv] = { position: toInt(h.position), duration: toInt(h.duration) }
+    end for
+
     root = CreateObject("roSGNode", "ContentNode")
     row = root.createChild("ContentNode")
     for each ep in m.episodes
@@ -291,6 +371,12 @@ sub fillEpisodes(seasonIdx as Integer)
             c = row.createChild("ContentNode")
             c.title = label
             c.hdPosterUrl = ep.thumb
+            ' barra cheia = assistido; barra parcial = em andamento
+            if watched.doesExist(ep.id) then
+                c.addFields({ info: { position: 1, duration: 1 } })
+            else if prog.doesExist(ep.id) then
+                c.addFields({ info: prog[ep.id] })
+            end if
         end if
     end for
     m.episodeRow.content = root
@@ -303,7 +389,7 @@ sub onSeasonFocused()
 end sub
 
 sub onSeasonSelected()
-    m.lastList = "episodes"
+    m.area = "episodes"
     m.episodeRow.setFocus(true)
 end sub
 
@@ -321,7 +407,7 @@ sub onEpisodeSelected()
     idx = sel[1]
     if idx < 0 or idx >= m.seasonEps.count() then return
     ep = m.seasonEps[idx]
-    m.lastList = "episodes"
+    m.area = "episodes"
     startStreams(ep.id, epCode(ep.season, ep.episode), ep.season, ep.episode)
 end sub
 
@@ -348,6 +434,7 @@ end sub
 ' Chamado pela biblioteca quando termina a busca de fontes
 sub onStreamsReady()
     realCount = m.found.count()
+    m.realCount = realCount
     m.streams = m.found
     ' Video de teste sempre no fim da lista, para validar o player
     m.streams.push({ url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", title: i18n("demo_title"), headers: [], demo: true, addonName: i18n("demo_addon"), addonUrl: "", subs: [] })
@@ -368,8 +455,21 @@ sub onStreamsReady()
     end if
     m.streamList.setFocus(true)
 
-    ' Ajuste "escolher a fonte automaticamente": toca a primeira fonte real
-    if m.global.optAutoPick = true and realCount > 0 then playStreamAt(0)
+    ' "Continuar/Assistir" do banner ou ajuste "escolher a fonte automaticamente":
+    ' toca a fonte do mesmo addon de antes (se houver) ou a primeira
+    if realCount > 0 and (m.global.optAutoPick = true or m.forceAuto) then
+        pick = 0
+        if m.preferSrc <> "" then
+            for i = 0 to realCount - 1
+                if m.streams[i].addonUrl = m.preferSrc then
+                    pick = i
+                    exit for
+                end if
+            end for
+        end if
+        m.forceAuto = false
+        playStreamAt(pick)
+    end if
 end sub
 
 sub onStreamSelected()
@@ -384,6 +484,14 @@ sub playStreamAt(idx as Integer)
 
     vid = m.pendingPlay.videoId
 
+    ' outras fontes reais da lista: o player tenta a proxima se esta falhar
+    alts = []
+    for i = 0 to m.realCount - 1
+        alts.push(m.streams[i])
+    end for
+    altIdx = -1
+    if idx < m.realCount then altIdx = idx
+
     m.top.playRequest = {
         url: s.url
         format: guessStreamFormat(s.url)
@@ -397,6 +505,8 @@ sub playStreamAt(idx as Integer)
         playlist: orderedEpisodes()
         source: { addonName: s.addonName, addonUrl: s.addonUrl, label: s.title }
         subs: s.subs
+        alts: alts
+        altIdx: altIdx
     }
 end sub
 
@@ -416,14 +526,51 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         end if
         return false
     end if
+
+    ' botoes Assistir / Minha lista
+    if m.area = "buttons" and (m.mode = "single" or m.mode = "episodes") then
+        if key = "left" then
+            if m.btnIdx = 1 and m.watchBtn.visible then focusButton(0)
+            return true
+        else if key = "right" then
+            if m.btnIdx = 0 and m.watchBtn.visible then focusButton(1)
+            return true
+        else if key = "OK" then
+            if m.btnIdx = 0 and m.watchBtn.visible then
+                onWatchPressed()
+            else
+                toggleList()
+            end if
+            return true
+        else if key = "down" and m.mode = "episodes" then
+            m.area = "seasons"
+            setButtonsActive(false)
+            m.seasonRow.setFocus(true)
+            return true
+        end if
+        return false
+    end if
+
     if key = "down" and m.seasonRow.hasFocus() then
-        m.lastList = "episodes"
+        m.area = "episodes"
         m.episodeRow.setFocus(true)
         return true
     else if key = "up" and m.episodeRow.hasFocus() then
-        m.lastList = "seasons"
+        m.area = "seasons"
         m.seasonRow.setFocus(true)
+        return true
+    else if key = "up" and m.seasonRow.hasFocus() then
+        focusButton(1)
         return true
     end if
     return false
 end function
+
+' Escondida (ex.: durante o video): solta a imagem de fundo para liberar memoria de video
+sub onVisibleChange()
+    if m.top.visible then
+        m.backdrop.uri = m.backdropUri
+    else
+        m.backdrop.uri = ""
+    end if
+end sub

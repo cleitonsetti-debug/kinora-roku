@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="SettingsCat" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChange"/>
+        <field id="width" type="float" onChange="onLayout"/>
+        <field id="height" type="float" onChange="onLayout"/>
+    </interface>
+    <children>
+        <Poster id="card" uri="pkg:/images/card.9.png" translation="[0, 4]" width="520" height="84"/>
+        <Poster id="icon" uri="" translation="[26, 22]" width="44" height="44" loadDisplayMode="scaleToFit"/>
+        <Label id="name" text="" translation="[90, 0]" width="410" height="92" vertAlign="center" maxLines="1" color="0xF2F2F5FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="25"/>
+        </Label>
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/SettingsCat.brs"/>
+</component>

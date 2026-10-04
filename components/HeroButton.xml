@@ -2,6 +2,7 @@
 <component name="HeroButton" extends="Group">
     <interface>
         <field id="text" type="string" onChange="refresh"/>
+        <field id="icon" type="string" value="ic_info" onChange="refresh"/>
         <field id="active" type="boolean" onChange="refresh"/>
     </interface>
     <children>

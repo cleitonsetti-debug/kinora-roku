@@ -9,13 +9,27 @@ busca, temporadas/episódios, escolha de fonte, player e "Continuar assistindo".
 2. Gere o pacote (o `manifest` precisa ficar na raiz do zip):
    ```
    cd kinora-canal-roku
-   zip -r ../kinora.zip . -x "README.md" "CHANGELOG.md" ".gitignore" ".git/*" ".github/*"
+   sh tools/package.sh ../kinora.zip
    ```
 3. Envie por `http://IP_DO_ROKU` (Upload > Install), ou por terminal:
    ```
    curl --user rokudev:SUA_SENHA --digest -F "mysubmit=Install" -F "archive=@../kinora.zip" http://IP_DO_ROKU/plugin_install
    ```
 4. Logs em tempo real: `telnet IP_DO_ROKU 8085` (todo `print` e erro de BrightScript aparece ali).
+
+## Atualização automática
+
+O Roku não atualiza sozinho apps instalados pelo modo desenvolvedor (isso só existe para apps da loja oficial).
+O que dá para fazer é o seu computador instalar a versão nova assim que ela sai no GitHub:
+
+```
+sh tools/auto-update.sh --setup           # IP do Roku e senha do modo desenvolvedor (ficam só neste computador)
+sh tools/auto-update.sh                   # verifica agora e instala se houver versão nova
+sh tools/auto-update.sh --install-timer   # verifica sozinho a cada 30 minutos
+```
+
+O computador precisa estar ligado e na mesma rede do Roku. Dentro do app, em **Ajustes > Sobre e ajuda > Verificar
+atualização**, o Kinora avisa quando existe uma versão mais nova.
 
 ## Visual
 
@@ -63,6 +77,33 @@ fonts/       Poppins (Regular, Medium, Bold)
 - Pasta `images/` criada, com todos os assets referenciados.
 - Addons, catálogos, metadados, episódios e streams vêm de dados reais em vez de listas mockadas.
 - `.env`, `CLAUDE.md`, `.bak` e `index.html` ficaram de fora do pacote.
+
+## Novidades da v1.5
+
+- **Perfis** estilo "Quem está assistindo?" (com perfil infantil), cada um com histórico, lista e ajustes próprios.
+- **Visual cinematográfico**: luz ambiente colorida por título, zoom lento no banner e barra de navegação em vidro.
+- **Continuar/Assistir em um clique** direto do banner.
+- **Addons** com ícone, detalhes, atualizar, configurar e remover; **Ajustes** em categorias, bem mais completos.
+
+## Novidades da v1.4
+
+- **Player no estilo Netflix/YouTube:** Esquerda/Direita pulam na hora mostrando só a barra vermelha; OK pausa mostrando só a barra; Baixo abre os controles completos.
+- **Troca automática de fonte** quando o vídeo falha, e **qualidade preferida** (1080p/720p/480p).
+- **Minha lista**, episódios assistidos, pesquisas recentes, elenco e duração na ficha.
+- **Ajustes:** ocultar conteúdo adulto, bloqueio por PIN e **Diagnóstico e autoteste**.
+- **Adicionar addon de fora:** `sh tools/add-addon.sh IP_DO_ROKU URL` (a TV pede confirmação).
+- **Para quem contribui:** `python3 tools/lint.py`, `sh tools/package.sh`, GitHub Actions e `CONTRIBUTING.md`.
+
+## Ferramentas (pasta `tools/`)
+
+| Arquivo | Para quê |
+|---|---|
+| `package.sh` | gera o zip de instalação (`sh tools/package.sh kinora.zip`) |
+| `auto-update.sh` | instala sozinho no Roku a release mais nova do GitHub (veja "Atualização automática") |
+| `install.sh` | baixa a última release e instala no Roku (`sh tools/install.sh IP SENHA`) |
+| `add-addon.sh` / `add-addon.html` | enviam a URL de um addon ao Kinora aberto no Roku |
+| `lint.py` | checagem estática do projeto |
+| `open-good-first-issues.sh` | abre issues para novos colaboradores |
 
 ## Novidades da v1.3
 

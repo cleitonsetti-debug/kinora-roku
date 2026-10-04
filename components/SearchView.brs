@@ -11,6 +11,9 @@ sub init()
     m.cursor = m.top.findNode("cursor")
     m.grid = m.top.findNode("grid")
     m.queryLabel = m.top.findNode("queryLabel")
+    m.recent = m.top.findNode("recent")
+    m.recentTitle = m.top.findNode("recentTitle")
+    m.recentItems = []
     m.status = m.top.findNode("statusLabel")
     m.debounce = m.top.findNode("debounce")
 
@@ -37,6 +40,8 @@ sub init()
 
     m.debounce.observeField("fire", "onDebounce")
     m.grid.observeField("rowItemSelected", "onGridSelected")
+    m.recent.observeField("itemSelected", "onRecentSelected")
+    showRecents()
 end sub
 
 sub buildKeyboard()
@@ -69,6 +74,38 @@ end sub
 
 sub moveCursor()
     m.cursor.translation = [80 + m.curCol * 98, 240 + m.curRow * 68]
+end sub
+
+' ---------------------------------------------------------------------------
+' Pesquisas recentes (aparecem enquanto nao ha texto nem resultados)
+' ---------------------------------------------------------------------------
+sub showRecents()
+    m.recentItems = loadSearches()
+    show = (m.recentItems.count() > 0 and m.query = "" and not m.hasResults)
+    m.recent.visible = show
+    m.recentTitle.visible = show
+    if show then
+        m.recentTitle.text = i18n("recent_searches")
+        content = CreateObject("roSGNode", "ContentNode")
+        for each q in m.recentItems
+            c = content.createChild("ContentNode")
+            c.title = asStr(q)
+        end for
+        m.recent.content = content
+        m.status.visible = false
+    end if
+end sub
+
+sub onRecentSelected()
+    idx = m.recent.itemSelected
+    if idx < 0 or idx >= m.recentItems.count() then return
+    m.query = asStr(m.recentItems[idx])
+    refreshQuery()
+    m.recent.visible = false
+    m.recentTitle.visible = false
+    goKeyboard()
+    m.debounce.control = "stop"
+    m.debounce.control = "start"
 end sub
 
 sub focusView()
@@ -116,6 +153,10 @@ sub applyKey(def as Object)
         m.query = ""
     end if
     refreshQuery()
+    if m.query <> "" then
+        m.recent.visible = false
+        m.recentTitle.visible = false
+    end if
     m.debounce.control = "stop"
     m.debounce.control = "start"
 end sub
@@ -153,6 +194,7 @@ sub clearResults(message as String)
     m.status.text = message
     m.status.visible = true
     if m.focusArea = "grid" then goKeyboard()
+    showRecents()
 end sub
 
 sub onSearchResult(event as Object)
@@ -181,7 +223,7 @@ sub renderResults()
         if metas <> invalid then
             c = m.catalogs[i]
             for each meta in metas
-                if Type(meta) = "roAssociativeArray" and n < 40 then
+                if Type(meta) = "roAssociativeArray" and n < 40 and not (m.global.optHideAdult = true and isAdultMeta(meta)) then
                     info = metaToInfo(meta, c.base, c.kind)
                     if info.id <> "" and info.name <> "" and not seen.doesExist(info.id) then
                         seen[info.id] = true
@@ -203,6 +245,8 @@ sub renderResults()
     m.hasResults = true
     m.grid.visible = true
     m.status.visible = false
+    m.recent.visible = false
+    m.recentTitle.visible = false
 end sub
 
 sub onGridSelected()
@@ -212,6 +256,7 @@ sub onGridSelected()
     item = row.getChild(sel[1])
     if item = invalid then return
     m.focusArea = "grid"
+    addSearch(m.query.trim())
     m.top.itemSelected = item.info
 end sub
 
@@ -220,6 +265,13 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
 
     if m.focusArea = "grid" then
         if key = "back" or key = "left" or key = "up" or key = "options" then
+            goKeyboard()
+            return true
+        end if
+        return false
+    end if
+    if m.focusArea = "recent" then
+        if key = "back" or key = "left" then
             goKeyboard()
             return true
         end if
@@ -235,6 +287,9 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         if m.curCol < m.cols - 1 then
             m.curCol = m.curCol + 1
             moveCursor()
+        else if m.recent.visible then
+            m.focusArea = "recent"
+            m.recent.setFocus(true)
         else
             goResults()
         end if

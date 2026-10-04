@@ -5,26 +5,47 @@
     </interface>
     <children>
         <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
-        <Label id="titleLabel" text="" translation="[100, 56]" color="0xFFFFFFFF">
-            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="42"/>
+        <Poster id="glow" uri="pkg:/images/glow_s.png" loadDisplayMode="scaleToFill" translation="[700, -80]" width="1500" height="1000" opacity="0.35" blendColor="0x8338ECFF"/>
+        <Label id="titleLabel" text="" translation="[80, 44]" width="800" height="70" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="48"/>
         </Label>
-        <Label id="topHint" text="" translation="[100, 140]" width="1700" color="0x9A9AA6FF">
+        <Label id="countLabel" text="" translation="[80, 110]" width="800" height="36" color="0x9A9AA6FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="22"/>
         </Label>
-        <LabelList id="list"
-            translation="[100, 220]"
-            itemSize="[1000, 64]"
-            numRows="10"
-            textHorizOffset="28"
-            color="0xD8D8E0FF"
-            focusedColor="0x0A0A0DFF"
-            focusBitmapUri="pkg:/images/pill_white.9.png"
-            focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
-        <Rectangle translation="[1150, 220]" width="700" height="640" color="0x14141AFF"/>
-        <Label id="detailLabel" text="" translation="[1180, 244]" width="640" height="592" wrap="true" maxLines="18" color="0xD8D8E0FF">
+
+        <MarkupList id="list"
+            translation="[70, 170]"
+            itemComponentName="AddonItem"
+            itemSize="[820, 100]"
+            numRows="8"
+            focusBitmapUri="pkg:/images/key_focus.9.png"/>
+
+        <Poster uri="pkg:/images/card.9.png" translation="[950, 170]" width="890" height="790"/>
+        <Poster id="detCircle" uri="pkg:/images/avatar_circle.png" translation="[990, 206]" width="120" height="120" blendColor="0x8338ECFF"/>
+        <Label id="detInitial" text="" translation="[990, 206]" width="120" height="120" horizAlign="center" vertAlign="center" maxLines="1" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="56"/>
+        </Label>
+        <Poster id="detLogo" uri="" translation="[990, 206]" width="120" height="120" loadDisplayMode="scaleToFit"/>
+        <Label id="detName" text="" translation="[1136, 212]" width="660" height="60" maxLines="1" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="38"/>
+        </Label>
+        <Label id="detState" text="" translation="[1136, 276]" width="660" height="40" maxLines="1" color="0xC9C9D2FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="23"/>
+        </Label>
+        <Label id="detText" text="" translation="[990, 350]" width="810" height="380" wrap="true" maxLines="12" color="0xD8D8E0FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
         </Label>
-        <Label id="hintLabel" text="" translation="[100, 940]" width="1700" color="0xC9C9D2FF">
+        <MarkupGrid id="actions"
+            translation="[990, 786]"
+            itemComponentName="PlayerButton"
+            itemSize="[150, 112]"
+            itemSpacing="[16, 0]"
+            numColumns="4"
+            numRows="1"
+            focusBitmapUri="pkg:/images/key_focus.9.png"
+            visible="false"/>
+
+        <Label id="hintLabel" text="" translation="[80, 990]" width="1760" height="40" color="0xC9C9D2FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
         </Label>
     </children>

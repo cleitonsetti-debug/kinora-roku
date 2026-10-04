@@ -8,9 +8,10 @@
     <children>
         <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
         <Poster id="backdrop" width="1920" height="1080" loadDisplayMode="scaleToZoom"/>
-        <Poster uri="pkg:/images/grad_left.png" width="1920" height="1080"/>
-        <Poster uri="pkg:/images/grad_bottom.png" width="1920" height="1080"/>
-        <Poster uri="pkg:/images/grad_top.png" width="1920" height="200"/>
+        <Poster id="glow" uri="pkg:/images/glow_s.png" loadDisplayMode="scaleToFill" translation="[-260, 120]" width="1500" height="1000" opacity="0.5" blendColor="0x8338ECFF"/>
+        <Poster uri="pkg:/images/grad_left_s.png" loadDisplayMode="scaleToFill" width="1920" height="1080"/>
+        <Poster uri="pkg:/images/grad_bottom_s.png" loadDisplayMode="scaleToFill" width="1920" height="1080"/>
+        <Poster uri="pkg:/images/grad_top_s.png" loadDisplayMode="scaleToFill" width="1920" height="200"/>
 
         <Label id="titleLabel" translation="[90, 100]" width="1100" height="160" maxLines="2" vertAlign="bottom" color="0xFFFFFFFF">
             <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="50"/>
@@ -18,26 +19,21 @@
         <Label id="metaLabel" translation="[90, 272]" width="1100" height="36" maxLines="1" color="0xC9C9D2FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="23"/>
         </Label>
-        <Label id="descLabel" translation="[90, 322]" width="900" height="130" wrap="true" maxLines="4" vertAlign="top" color="0xB4B4BFFF">
+        <Label id="descLabel" translation="[90, 322]" width="900" height="96" wrap="true" maxLines="3" vertAlign="top" color="0xB4B4BFFF">
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
         </Label>
-        <Label id="infoLabel" text="" translation="[90, 520]" width="1100" color="0xC9C9D2FF" visible="false">
+        <Label id="castLabel" text="" translation="[90, 426]" width="1500" height="38" maxLines="1" color="0x9A9AA6FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="20"/>
+        </Label>
+        <Label id="infoLabel" text="" translation="[90, 560]" width="1100" color="0xC9C9D2FF" visible="false">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="28"/>
         </Label>
 
-        <LabelList id="watchBtn"
-            translation="[90, 500]"
-            itemSize="[300, 64]"
-            numRows="1"
-            textHorizOffset="100"
-            color="0xFFFFFFFF"
-            focusedColor="0x0A0A0DFF"
-            focusBitmapUri="pkg:/images/pill_white.9.png"
-            focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"
-            visible="false"/>
+        <PillButton id="watchBtn" translation="[90, 478]" visible="false"/>
+        <PillButton id="listBtn" translation="[400, 478]" visible="false"/>
 
         <RowList id="seasonRow"
-            translation="[90, 490]"
+            translation="[90, 576]"
             itemComponentName="ChipItem"
             itemSize="[1740, 52]"
             rowHeights="[52]"
@@ -50,7 +46,7 @@
             focusBitmapUri="pkg:/images/focus_ring.9.png"
             visible="false"/>
         <RowList id="episodeRow"
-            translation="[90, 590]"
+            translation="[90, 666]"
             itemComponentName="PosterItem"
             itemSize="[1740, 250]"
             rowHeights="[250]"

@@ -271,3 +271,44 @@ function addonDetailsText(a as Object) as String
     lines.push(i18n("ad_url") + ": " + a.url)
     return joinWith(lines, Chr(10))
 end function
+
+' Corpo do painel de detalhes do addon (descricao, tipos, recursos, catalogos, endereco)
+function addonBody(a as Object) as String
+    lines = []
+    if a.ok = true then
+        mf = a.manifest
+        d = asStr(mf.description)
+        if d = "" then d = i18n("ad_nodesc")
+        if Len(d) > 260 then d = Left(d, 257) + "..."
+        lines.push(d)
+        lines.push("")
+        t = joinList(mf.types, 8)
+        if t <> "" then lines.push(i18n("ad_types") + ": " + t)
+        names = []
+        if Type(mf.resources) = "roArray" then
+            for each r in mf.resources
+                if Type(r) = "roAssociativeArray" then
+                    names.push(asStr(r.name))
+                else
+                    names.push(asStr(r))
+                end if
+            end for
+        end if
+        if names.count() > 0 then lines.push(i18n("ad_resources") + ": " + joinWith(names, ", "))
+        if Type(mf.catalogs) = "roArray" then lines.push(i18n("ad_catalogs") + ": " + Str(mf.catalogs.count()).trim())
+    else
+        lines.push(i18n("ad_state_err"))
+    end if
+    lines.push(i18n("ad_url") + ": " + hostOf(a.url))
+    return joinWith(lines, Chr(10))
+end function
+
+' Endereco da pagina de configuracao (addons com behaviorHints.configurable)
+function addonConfigUrl(a as Object) as String
+    if a.ok <> true then return ""
+    bh = a.manifest.behaviorHints
+    if Type(bh) = "roAssociativeArray" then
+        if bh.configurable = true then return a.url + "/configure"
+    end if
+    return ""
+end function

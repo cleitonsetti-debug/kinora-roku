@@ -32,6 +32,19 @@
             rowFocusAnimationStyle="floatingFocus"
             focusBitmapUri="pkg:/images/focus_ring.9.png"
             visible="false"/>
+        <Label id="recentTitle" text="" translation="[700, 150]" width="900" height="40" color="0xC9C9D2FF" visible="false">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="26"/>
+        </Label>
+        <LabelList id="recent"
+            translation="[700, 204]"
+            itemSize="[760, 60]"
+            numRows="8"
+            textHorizOffset="24"
+            color="0xD8D8E0FF"
+            focusedColor="0x0A0A0DFF"
+            focusBitmapUri="pkg:/images/pill_white.9.png"
+            focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"
+            visible="false"/>
         <Label id="statusLabel" text="" translation="[700, 420]" width="1100" horizAlign="center" wrap="true" maxLines="3" color="0xC9C9D2FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="28"/>
         </Label>

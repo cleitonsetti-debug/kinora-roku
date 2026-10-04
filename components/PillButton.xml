@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="PillButton" extends="Group">
+    <interface>
+        <field id="text" type="string" onChange="refresh"/>
+        <field id="icon" type="string" onChange="refresh"/>
+        <field id="active" type="boolean" onChange="refresh"/>
+    </interface>
+    <children>
+        <Poster id="bg" uri="pkg:/images/pillbtn_glass.png" width="290" height="64"/>
+        <Poster id="iconImg" uri="" translation="[40, 16]" width="32" height="32" loadDisplayMode="scaleToFit"/>
+        <Label id="label" text="" translation="[90, 0]" height="64" vertAlign="center" maxLines="1" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="24"/>
+        </Label>
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/PillButton.brs"/>
+</component>

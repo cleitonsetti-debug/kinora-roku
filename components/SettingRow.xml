@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="SettingRow" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChange"/>
+        <field id="width" type="float" onChange="onLayout"/>
+        <field id="height" type="float" onChange="onLayout"/>
+    </interface>
+    <children>
+        <Poster id="card" uri="pkg:/images/card.9.png" translation="[0, 4]" width="1180" height="92"/>
+        <Label id="title" text="" translation="[32, 12]" width="820" height="42" maxLines="1" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="26"/>
+        </Label>
+        <Label id="hint" text="" translation="[32, 54]" width="820" height="32" maxLines="1" color="0x9A9AA6FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="19"/>
+        </Label>
+        <Poster id="chip" uri="pkg:/images/badge_glass.9.png" translation="[900, 26]" width="240" height="44" blendColor="0xFFFFFFFF"/>
+        <Label id="value" text="" translation="[900, 26]" width="240" height="44" horizAlign="center" vertAlign="center" maxLines="1" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="21"/>
+        </Label>
+    </children>
+    <script type="text/brightscript" uri="pkg:/components/SettingRow.brs"/>
+</component>

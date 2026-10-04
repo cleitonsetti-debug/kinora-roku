@@ -6,21 +6,31 @@
     </interface>
     <children>
         <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
-        <Label id="titleLabel" text="" translation="[100, 56]" color="0xFFFFFFFF">
-            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="42"/>
+        <Poster id="glow" uri="pkg:/images/glow_s.png" loadDisplayMode="scaleToFill" translation="[-300, 200]" width="1500" height="1000" opacity="0.30" blendColor="0x8338ECFF"/>
+        <Label id="titleLabel" text="" translation="[80, 44]" width="800" height="70" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="48"/>
         </Label>
-        <Label id="topHint" text="" translation="[100, 140]" width="1700" color="0x9A9AA6FF">
+        <Label id="subLabel" text="" translation="[80, 110]" width="1400" height="36" color="0x9A9AA6FF">
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="22"/>
         </Label>
-        <LabelList id="list"
-            translation="[100, 220]"
-            itemSize="[1700, 64]"
-            numRows="10"
-            textHorizOffset="28"
-            color="0xD8D8E0FF"
-            focusedColor="0x0A0A0DFF"
-            focusBitmapUri="pkg:/images/pill_white.9.png"
-            focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
+
+        <MarkupList id="cats"
+            translation="[70, 170]"
+            itemComponentName="SettingsCat"
+            itemSize="[520, 92]"
+            numRows="8"
+            focusBitmapUri="pkg:/images/key_focus.9.png"/>
+        <MarkupList id="rows"
+            translation="[640, 170]"
+            itemComponentName="SettingRow"
+            itemSize="[1180, 100]"
+            numRows="8"
+            focusBitmapUri="pkg:/images/key_focus.9.png"/>
+
+        <Label id="hintLabel" text="" translation="[80, 1000]" width="1760" height="40" color="0x9A9AA6FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="22"/>
+        </Label>
+        <Timer id="pinTimer" repeat="false" duration="0.4"/>
     </children>
     <script type="text/brightscript" uri="pkg:/source/Utils.brs"/>
     <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>

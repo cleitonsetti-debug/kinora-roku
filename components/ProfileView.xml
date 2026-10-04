@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="ProfileView" extends="Group">
+    <interface>
+        <field id="mode" type="string" value="select"/>
+        <field id="chosen" type="string" alwaysNotify="true"/>
+        <function name="focusView"/>
+    </interface>
+    <children>
+        <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
+        <Poster uri="pkg:/images/glow_s.png" loadDisplayMode="scaleToFill" translation="[360, 140]" width="1200" height="800" blendColor="0x8338ECFF" opacity="0.35"/>
+        <Label id="title" text="" translation="[0, 150]" width="1920" height="90" horizAlign="center" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="58"/>
+        </Label>
+        <MarkupGrid id="tiles"
+            translation="[330, 330]"
+            itemComponentName="ProfileTile"
+            itemSize="[260, 290]"
+            itemSpacing="[20, 0]"
+            numColumns="6"
+            numRows="1"
+            focusBitmapUri="pkg:/images/key_focus.9.png"/>
+        <Label id="hint" text="" translation="[0, 800]" width="1920" height="40" horizAlign="center" color="0x9A9AA6FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="24"/>
+        </Label>
+
+        <Group id="menuPanel" visible="false">
+            <Rectangle width="1920" height="1080" color="0x000000B8"/>
+            <Poster uri="pkg:/images/card.9.png" translation="[640, 280]" width="640" height="520"/>
+            <Label id="menuTitle" text="" translation="[690, 310]" width="540" height="50" maxLines="1" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="30"/>
+            </Label>
+            <LabelList id="menu"
+                translation="[680, 380]"
+                itemSize="[560, 60]"
+                numRows="5"
+                textHorizOffset="24"
+                color="0xD8D8E0FF"
+                focusedColor="0x0A0A0DFF"
+                focusBitmapUri="pkg:/images/pill_white.9.png"
+                focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
+        </Group>
+        <Timer id="dlgTimer" repeat="false" duration="0.4"/>
+    </children>
+    <script type="text/brightscript" uri="pkg:/source/Utils.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/Storage.brs"/>
+    <script type="text/brightscript" uri="pkg:/components/ProfileView.brs"/>
+</component>

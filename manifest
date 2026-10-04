@@ -1,9 +1,10 @@
 title=Kinora
 subtitle=Filmes, series e animes
 major_version=1
-minor_version=3
-build_version=00014
+minor_version=5
+build_version=00019
 rsg_version=1.2
+kinora_release=1.5.2
 ui_resolutions=fhd
 mm_icon_focus_hd=pkg:/images/icon_hd.png
 mm_icon_focus_sd=pkg:/images/icon_sd.png

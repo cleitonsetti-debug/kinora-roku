@@ -14,9 +14,9 @@
         </Label>
         <RowList id="list"
             itemComponentName="PosterItem"
-            itemSize="[1780, 240]"
-            rowHeights="[240]"
-            rowItemSize="[[160, 240]]"
+            itemSize="[1780, 300]"
+            rowHeights="[300]"
+            rowItemSize="[[200, 300]]"
             rowItemSpacing="[[22, 0]]"
             numRows="1"
             showRowLabel="[false]"

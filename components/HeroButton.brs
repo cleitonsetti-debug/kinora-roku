@@ -20,11 +20,11 @@ sub refresh()
 
     if m.top.active then
         m.bg.uri = "pkg:/images/herobtn_white.png"
-        m.icon.uri = "pkg:/images/ic_info_dark.png"
+        m.icon.uri = "pkg:/images/" + m.top.icon + "_dark.png"
         m.label.color = "0x0A0A0DFF"
     else
         m.bg.uri = "pkg:/images/herobtn_glass.png"
-        m.icon.uri = "pkg:/images/ic_info.png"
+        m.icon.uri = "pkg:/images/" + m.top.icon + ".png"
         m.label.color = "0xFFFFFFFF"
     end if
 end sub

@@ -3,12 +3,13 @@
 ' (o Video fica sem a interface nativa), entao os controles aparecem com certeza.
 '
 '  Controles escondidos:  Baixo/Cima/* = mostrar controles   OK = pausar/continuar
-'                         Esquerda/Direita = abre a barra de tempo   Voltar = sair
+'                         Esquerda/Direita = pula 10 s (acelera se repetir) mostrando SO a barra
+'                         vermelha com os tempos, como Netflix/YouTube   Voltar = sair
 '  Controles visiveis:    Esquerda/Direita escolhem o botao, OK ativa
 '                         (-10 s, pausar, +10 s, legendas, audio, proximo ep., fonte)
 '                         Cima = barra de tempo; Voltar = esconder
-'  Barra de tempo: Esquerda/Direita (com os controles escondidos tambem) movem o ponto,
-'                  OK confirma; sem mexer por 3 s ele confirma sozinho; Voltar cancela
+'  Barra de tempo: Esquerda/Direita pulam NA HORA (1o toque imediato, depois a cada 0,45 s);
+'                  pelos controles (Cima) o ponto so vale ao confirmar com OK; Voltar cancela
 '  Tambem: Play = pausar, voltar-rapido/avancar-rapido = +-30 s
 '
 '  Alem disso: legendas (stream + addons "subtitles"), faixas de audio com idioma
@@ -30,6 +31,12 @@ sub init()
     m.ctlTitle = m.top.findNode("ctlTitle")
     m.ctlInfo = m.top.findNode("ctlInfo")
     m.barFill = m.top.findNode("barFill")
+    m.shadeMini = m.top.findNode("shadeMini")
+    m.shadeFull = m.top.findNode("shadeFull")
+    m.shadeTop = m.top.findNode("shadeTop")
+    m.spinner = m.top.findNode("spinner")
+    m.bar = m.top.findNode("bar")
+    m.bufferTimer = m.top.findNode("bufferTimer")
     m.barKnob = m.top.findNode("barKnob")
     m.intro = m.top.findNode("intro")
     m.introTitle = m.top.findNode("introTitle")
@@ -73,12 +80,20 @@ sub init()
     m.menuActions = []
     m.btnActions = []
     m.ctrlVisible = false
+    m.mini = false
     m.nextVisible = false
     m.switching = false
     m.audioApplied = false
     m.subApplied = false
     m.hintShown = false
     m.preferAddonUrl = ""
+    m.alts = []
+    m.altIdx = -1
+    m.altTries = 0
+    m.titleId = ""
+    m.prefSub = ""
+    m.prefAudio = ""
+    m.trackLangs = {}
     m.introShown = false
     m.scrubOrigin = "buttons"
     m.scrubMoved = false
@@ -87,6 +102,7 @@ sub init()
     m.scrubIdx = 0
     m.scrubDir = 0
     m.scrubAt = 0
+    m.lastSeekAt = -100000
     m.clock = CreateObject("roTimespan")
     m.clock.Mark()
 
@@ -101,6 +117,7 @@ sub init()
     m.iconTimer.observeField("fire", "onIconTimer")
     m.introTimer.observeField("fire", "onIntroTimer")
     m.scrubTimer.observeField("fire", "onScrubTimer")
+    m.bufferTimer.observeField("fire", "onBufferTimer")
     m.scrubHint.text = i18n("player_scrub_hint")
     m.menu.observeField("itemSelected", "onMenuSelected")
     m.buttons.observeField("itemSelected", "onButtonSelected")
@@ -139,6 +156,20 @@ sub onRequest()
     if Type(r.playlist) = "roArray" then m.playlist = r.playlist
     m.preferAddonUrl = ""
     if Type(r.source) = "roAssociativeArray" then m.preferAddonUrl = asStr(r.source.addonUrl)
+
+    ' outras fontes da lista: se esta falhar, tenta a proxima
+    m.alts = []
+    if Type(r.alts) = "roArray" then m.alts = r.alts
+    m.altIdx = -1
+    if r.altIdx <> invalid then m.altIdx = toInt(r.altIdx)
+    m.altTries = 0
+
+    ' legenda/audio escolhidos antes para este titulo
+    m.titleId = asStr(r.info.id)
+    tp = loadTrackPrefs(m.titleId)
+    m.prefSub = asStr(tp.subLang)
+    m.prefAudio = asStr(tp.audioLang)
+
     computeNext()
     beginPrepare()
 end sub
@@ -180,7 +211,7 @@ function buildSubTracks() as Object
         all.push(t)
     end for
 
-    pref = m.global.optSubLang
+    pref = effSub()
     ordered = []
     if pref <> "off" then
         for each t in all
@@ -226,6 +257,8 @@ sub startPlayback()
     m.intro.visible = false
     m.video.content = content
     m.video.control = "play"
+    m.bufferTimer.control = "stop"
+    m.bufferTimer.control = "start"
     hideControls()
 end sub
 
@@ -251,6 +284,7 @@ end function
 sub onState()
     st = m.video.state
     if st = "playing" then
+        m.bufferTimer.control = "stop"
         hideLoading()
         if m.centerIcon.visible then
             m.centerIcon.uri = "pkg:/images/ic_play_big.png"
@@ -265,6 +299,10 @@ sub onState()
             refreshButtons()
             restartHide()
         end if
+        if m.mini then
+            m.hideTimer.control = "stop"
+            m.hideTimer.control = "start"
+        end if
         if not m.introShown then
             m.introShown = true
             showIntro()
@@ -275,9 +313,10 @@ sub onState()
         m.iconTimer.control = "stop"
         m.centerIcon.uri = "pkg:/images/ic_pause_big.png"
         m.centerIcon.visible = true
-        if not m.switching and not m.panelOpen then showControls()
+        if not m.switching and not m.panelOpen and not m.ctrlVisible and not m.scrubbing then showMini()
         if m.ctrlVisible then refreshButtons()
     else if st = "finished" then
+        m.bufferTimer.control = "stop"
         m.timer.control = "stop"
         m.tickTimer.control = "stop"
         if m.switching then return
@@ -289,6 +328,8 @@ sub onState()
         end if
     else if st = "error" then
         if m.switching then return
+        m.bufferTimer.control = "stop"
+        if tryNextSource() then return
         m.timer.control = "stop"
         m.tickTimer.control = "stop"
         msg = m.video.errorMsg
@@ -325,7 +366,7 @@ function placeBadge(bg as Object, lbl as Object, text as String, x as Integer) a
 end function
 
 sub showIntro()
-    if m.global.optIntro <> true or m.ctrlVisible then
+    if m.global.optIntro <> true or m.ctrlVisible or m.scrubbing then
         showHintOnce()
         return
     end if
@@ -386,10 +427,14 @@ end sub
 sub showLoading(text as String)
     m.loadingLabel.text = text
     m.loadingLabel.visible = true
+    m.spinner.visible = true
+    m.spinner.control = "start"
 end sub
 
 sub hideLoading()
     m.loadingLabel.visible = false
+    m.spinner.control = "stop"
+    m.spinner.visible = false
 end sub
 
 sub showToast(text as String)
@@ -420,14 +465,14 @@ sub updateProgress()
     if ratio > 1 then ratio = 1.0
     fillW = Int(1760 * ratio)
 
-    ' no modo de ajuste a barra fica mais grossa e a bolinha maior
+    ' ajustando: barra mais grossa e bolinha maior
     th = 10
     ks = 28
     if m.scrubbing then
         th = 16
         ks = 40
     end if
-    barTop = 795 - (th \ 2)
+    barTop = 997 - (th \ 2)
     m.barTrack.height = th
     m.barTrack.translation = [80, barTop]
     m.barFill.height = th
@@ -441,29 +486,26 @@ sub updateProgress()
     end if
     m.barKnob.width = ks
     m.barKnob.height = ks
-    m.barKnob.translation = [80 + fillW - (ks \ 2), 795 - (ks \ 2)]
+    m.barKnob.translation = [80 + fillW - (ks \ 2), 997 - (ks \ 2)]
 
-    if m.scrubbing then
-        txt = formatTime(Int(posSec))
-        if dur > 0 then txt = txt + "  /  " + formatTime(Int(dur))
-        m.scrubTipLabel.text = txt
+    ' tempo atual / total a esquerda, tempo restante a direita
+    if dur > 0 then
+        m.timeLeft.text = formatTime(Int(posSec)) + "  /  " + formatTime(Int(dur))
+        m.timeRight.text = "-" + formatTime(Int(dur - posSec))
+    else
+        m.timeLeft.text = formatTime(Int(posSec))
+        m.timeRight.text = ""
+    end if
+
+    ' balao de tempo so no modo "Ir para" aberto pelos controles
+    showTip = (m.scrubbing and m.scrubOrigin = "buttons")
+    m.scrubTip.visible = showTip
+    if showTip then
+        m.scrubTipLabel.text = formatTime(Int(posSec))
         tx = 80 + fillW - 125
         if tx < 80 then tx = 80
         if tx > 1590 then tx = 1590
-        m.scrubTip.translation = [tx, 818]
-        m.scrubTip.visible = true
-        m.timeLeft.visible = false
-        m.timeRight.visible = false
-    else
-        m.scrubTip.visible = false
-        m.timeLeft.visible = true
-        m.timeRight.visible = true
-        m.timeLeft.text = formatTime(Int(posSec))
-        if dur > 0 then
-            m.timeRight.text = formatTime(Int(dur))
-        else
-            m.timeRight.text = ""
-        end if
+        m.scrubTip.translation = [tx, 890]
     end if
 end sub
 
@@ -472,7 +514,6 @@ end sub
 ' ---------------------------------------------------------------------------
 function enterScrub(origin as String) as Boolean
     if m.video.duration <= 0 then return false
-    if not m.ctrlVisible then showControls()
     m.scrubOrigin = origin
     m.scrubMoved = false
     m.scrubbing = true
@@ -480,10 +521,21 @@ function enterScrub(origin as String) as Boolean
     m.scrubIdx = 0
     m.scrubDir = 0
     m.hideTimer.control = "stop"
-    m.scrubHint.visible = true
+    m.intro.visible = false
+    m.hintLabel.visible = false
+    hideNextCard()
+    ' pelos controles: com dica na tela e 3 s para confirmar; "so a barra": sem nada alem dela
+    m.scrubHint.visible = (origin = "buttons")
+    m.lastSeekAt = -100000
+    if origin = "buttons" then
+        m.scrubTimer.duration = 3.0
+    else
+        m.scrubTimer.duration = 1.3
+    end if
     m.scrubTimer.control = "stop"
     m.scrubTimer.control = "start"
     m.top.setFocus(true)
+    updateBarVisibility()
     updateProgress()
     return true
 end function
@@ -492,16 +544,13 @@ sub exitScrub()
     m.scrubbing = false
     m.scrubTimer.control = "stop"
     m.scrubHint.visible = false
+    updateBarVisibility()
     updateProgress()
-    if m.scrubOrigin = "hidden" then
-        hideControls()
-    else
-        focusCurrent()
-        restartHide()
-    end if
+    focusCurrent()
+    if m.ctrlVisible then restartHide()
 end sub
 
-' Parado por 3 s: confirma o ponto escolhido (ou sai, se nao mexeu)
+' Parado por um instante: confirma o ponto escolhido (ou sai, se nao mexeu)
 sub onScrubTimer()
     if not m.scrubbing then return
     if m.scrubMoved then
@@ -511,9 +560,32 @@ sub onScrubTimer()
     end if
 end sub
 
+sub shiftScrub(delta as Integer)
+    dur = m.video.duration
+    t = m.scrubPos + delta
+    if t < 0 then t = 0
+    if t > dur - 2 then t = dur - 2
+    m.scrubPos = t
+    m.scrubMoved = true
+    m.scrubTimer.control = "stop"
+    m.scrubTimer.control = "start"
+    updateProgress()
+
+    ' Esquerda/Direita sem controles: pula na hora (no maximo a cada 0,45 s; o ponto final vale ao parar)
+    if m.scrubOrigin = "hidden" then
+        now = m.clock.TotalMilliseconds()
+        if now - m.lastSeekAt > 450 then
+            m.video.seek = m.scrubPos
+            m.lastSeekAt = now
+        end if
+    end if
+end sub
+
 ' Passos de 10, 10, 20, 30, 60, 90 e 120 s: segurar/repetir a tecla acelera
 sub moveScrub(dir as Integer)
-    steps = [10, 10, 20, 30, 60, 90, 120]
+    j = m.global.optJump
+    if j = invalid or j < 5 then j = 10
+    steps = [j, j, j * 2, j * 3, j * 6, j * 9, j * 12]
     now = m.clock.TotalMilliseconds()
     if dir = m.scrubDir and (now - m.scrubAt) < 700 then
         if m.scrubIdx < steps.count() - 1 then m.scrubIdx = m.scrubIdx + 1
@@ -522,21 +594,11 @@ sub moveScrub(dir as Integer)
     end if
     m.scrubDir = dir
     m.scrubAt = now
-    dur = m.video.duration
-    t = m.scrubPos + dir * steps[m.scrubIdx]
-    if t < 0 then t = 0
-    if t > dur - 2 then t = dur - 2
-    m.scrubPos = t
-    m.scrubMoved = true
-    m.scrubTimer.control = "stop"
-    m.scrubTimer.control = "start"
-    updateProgress()
+    shiftScrub(dir * steps[m.scrubIdx])
 end sub
 
 sub commitScrub()
-    t = m.scrubPos
-    m.video.seek = t
-    showToast(i18n("player_goto") + "  " + formatTime(Int(t)))
+    m.video.seek = m.scrubPos
     exitScrub()
 end sub
 
@@ -556,9 +618,11 @@ sub refreshButtons()
         pauseLabel = i18n("player_resume")
         pauseIcon = "ic_play"
     end if
-    addButton(content, [], actions, "-10 s", "ic_rewind", "back10")
+    jmp = m.global.optJump
+    if jmp = invalid or jmp < 5 then jmp = 10
+    addButton(content, [], actions, "-" + Str(jmp).trim() + " s", "ic_rewind", "back10")
     addButton(content, [], actions, pauseLabel, pauseIcon, "pause")
-    addButton(content, [], actions, "+10 s", "ic_forward", "fwd10")
+    addButton(content, [], actions, "+" + Str(jmp).trim() + " s", "ic_forward", "fwd10")
     addButton(content, [], actions, i18n("player_goto"), "ic_scrub", "scrub")
     addButton(content, [], actions, i18n("player_subs"), "ic_subs", "subs")
     addButton(content, [], actions, i18n("player_audio"), "ic_audio", "audio")
@@ -569,6 +633,27 @@ sub refreshButtons()
     m.btnActions = actions
     m.buttons.content = content
     if idx > 0 and idx < actions.count() then m.buttons.jumpToItem = idx
+end sub
+
+sub updateBarVisibility()
+    vis = (m.ctrlVisible or m.scrubbing or m.mini)
+    m.bar.visible = vis
+    m.shadeFull.visible = m.ctrlVisible
+    m.shadeTop.visible = m.ctrlVisible
+    m.shadeMini.visible = ((m.scrubbing or m.mini) and not m.ctrlVisible)
+    m.controls.visible = m.ctrlVisible
+end sub
+
+' Barra "so o essencial" (pausa): progresso e tempos, sem titulo nem botoes
+sub showMini()
+    if m.req = invalid or m.switching then return
+    m.mini = true
+    m.intro.visible = false
+    m.hintLabel.visible = false
+    updateBarVisibility()
+    updateProgress()
+    m.hideTimer.control = "stop"
+    if m.video.state <> "paused" then m.hideTimer.control = "start"
 end sub
 
 sub showControls()
@@ -588,21 +673,24 @@ sub showControls()
     m.ctlInfo.text = info
     refreshButtons()
     if not wasVisible then m.buttons.jumpToItem = 1
-    updateProgress()
     hideNextCard()
     m.hintLabel.visible = false
     m.intro.visible = false
-    m.controls.visible = true
     m.ctrlVisible = true
+    m.mini = false
+    updateBarVisibility()
+    updateProgress()
     focusCurrent()
     restartHide()
 end sub
 
 sub hideControls()
-    m.controls.visible = false
     m.ctrlVisible = false
+    updateBarVisibility()
     m.hideTimer.control = "stop"
     focusCurrent()
+    ' pausado: continua so a barra, como nos outros apps
+    if m.video.state = "paused" and not m.scrubbing then showMini()
 end sub
 
 ' Some sozinho depois de alguns segundos, exceto se o video estiver pausado
@@ -615,7 +703,12 @@ end sub
 sub onHideTimer()
     if m.panelOpen or m.scrubbing then return
     if m.video.state = "paused" then return
-    hideControls()
+    if m.ctrlVisible then
+        hideControls()
+    else if m.mini then
+        m.mini = false
+        updateBarVisibility()
+    end if
 end sub
 
 sub onButtonFocused()
@@ -627,10 +720,12 @@ sub onButtonSelected()
     if idx < 0 or idx >= m.btnActions.count() then return
     act = m.btnActions[idx]
     restartHide()
+    jmp = m.global.optJump
+    if jmp = invalid or jmp < 5 then jmp = 10
     if act = "back10" then
-        seekBy(-10)
+        seekBy(-jmp)
     else if act = "fwd10" then
-        seekBy(10)
+        seekBy(jmp)
     else if act = "pause" then
         togglePause()
     else if act = "scrub" then
@@ -685,9 +780,19 @@ function trackLabel(t as Object) as String
     return d
 end function
 
+function effSub() as String
+    if m.prefSub <> "" then return m.prefSub
+    return m.global.optSubLang
+end function
+
+function effAudio() as String
+    if m.prefAudio <> "" then return m.prefAudio
+    return m.global.optAudioLang
+end function
+
 sub applyAudioPref()
     if m.audioApplied then return
-    pref = m.global.optAudioLang
+    pref = effAudio()
     if pref = "auto" then
         m.audioApplied = true
         return
@@ -706,7 +811,7 @@ end sub
 
 sub applySubPref()
     if m.subApplied then return
-    pref = m.global.optSubLang
+    pref = effSub()
     if pref = "off" then
         m.subApplied = true
         m.video.globalCaptionMode = "Off"
@@ -737,8 +842,8 @@ end sub
 ' Proximo episodio
 ' ---------------------------------------------------------------------------
 sub onTick()
-    if m.ctrlVisible then updateProgress()
-    if m.panelOpen or m.switching or m.ctrlVisible then return
+    if m.ctrlVisible or m.mini then updateProgress()
+    if m.panelOpen or m.switching or m.ctrlVisible or m.scrubbing or m.mini then return
     if m.nextEp = invalid then return
     st = m.video.state
     if st <> "playing" and st <> "paused" then return
@@ -791,6 +896,36 @@ sub playNext()
     streamsBegin(asStr(m.req.info.kind), nxt.id)
 end sub
 
+' Fonte falhou (erro ou espera longa): tenta a proxima da lista, ate 5 vezes
+function tryNextSource() as Boolean
+    if m.altIdx < 0 or m.altTries >= 5 then return false
+    n = m.altIdx + 1
+    if n >= m.alts.count() then return false
+    m.altTries = m.altTries + 1
+    m.altIdx = n
+    s = m.alts[n]
+    m.req.url = s.url
+    m.req.format = guessStreamFormat(s.url)
+    m.req.headers = s.headers
+    m.req.source = { addonName: s.addonName, addonUrl: s.addonUrl, label: s.title }
+    m.streamSubs = s.subs
+    m.preferAddonUrl = s.addonUrl
+    m.video.control = "stop"
+    showLoading(trf2("player_try_next", Str(n + 1).trim(), Str(m.alts.count()).trim()))
+    beginPrepare()
+    return true
+end function
+
+sub onBufferTimer()
+    st = m.video.state
+    if st = "playing" or st = "paused" or m.switching then return
+    if tryNextSource() then return
+    m.timer.control = "stop"
+    m.tickTimer.control = "stop"
+    closePlayer()
+    showMessage(i18n("play_error_title"), i18n("player_timeout"))
+end sub
+
 ' Chamado pela biblioteca de fontes quando termina a busca do proximo episodio
 sub onStreamsReady()
     idx = -1
@@ -810,6 +945,9 @@ sub onStreamsReady()
     end if
 
     s = m.found[idx]
+    m.alts = m.found
+    m.altIdx = idx
+    m.altTries = 0
     m.req.url = s.url
     m.req.format = guessStreamFormat(s.url)
     m.req.headers = s.headers
@@ -869,10 +1007,12 @@ sub openTrackPanel(mode as String)
         tracks = m.video.availableAudioTracks
     end if
     m.panelInfo.text = ""
+    m.trackLangs = {}
     if Type(tracks) = "roArray" then
         for each t in tracks
             labels.push(trackLabel(t))
             actions.push(trackId(t))
+            m.trackLangs[trackId(t)] = asStr(t.Language)
         end for
     end if
     if labels.count() = 0 then
@@ -906,12 +1046,26 @@ sub onMenuSelected()
     if m.panelMode = "subs" then
         if act = "off" then
             m.video.globalCaptionMode = "Off"
+            m.prefSub = "off"
+            saveTrackPref(m.titleId, "subLang", "off")
         else if act <> "none" then
             m.video.subtitleTrack = act
             m.video.globalCaptionMode = "On"
+            code = prefCode(asStr(m.trackLangs[act]))
+            if code <> "" and code <> "und" then
+                m.prefSub = code
+                saveTrackPref(m.titleId, "subLang", code)
+            end if
         end if
     else if m.panelMode = "audio" then
-        if act <> "none" then m.video.audioTrack = act
+        if act <> "none" then
+            m.video.audioTrack = act
+            code = prefCode(asStr(m.trackLangs[act]))
+            if code <> "" and code <> "und" then
+                m.prefAudio = code
+                saveTrackPref(m.titleId, "audioLang", code)
+            end if
+        end if
     end if
     closePanel()
 end sub
@@ -919,6 +1073,11 @@ end sub
 ' ---------------------------------------------------------------------------
 ' Historico ("Continuar assistindo")
 ' ---------------------------------------------------------------------------
+function sourceAddonUrl() as String
+    if Type(m.req.source) = "roAssociativeArray" then return asStr(m.req.source.addonUrl)
+    return ""
+end function
+
 function buildEntry(videoId as String, season as Integer, episode as Integer, posSec as Integer, dur as Integer) as Object
     info = m.req.info
     return {
@@ -927,12 +1086,9 @@ function buildEntry(videoId as String, season as Integer, episode as Integer, po
         kind: info.kind
         name: info.name
         poster: info.poster
-        background: info.background
-        description: Left(info.description, 120)
         year: info.year
-        rating: info.rating
-        genres: info.genres
         addon: info.addon
+        src: sourceAddonUrl()
         season: season
         episode: episode
         position: posSec
@@ -945,6 +1101,9 @@ end function
 ' na lista apontando para ele (sem progresso)
 sub finishEpisode()
     if m.req = invalid then return
+    isDemo = false
+    if Type(m.req.source) = "roAssociativeArray" then isDemo = (asStr(m.req.source.addonUrl) = "")
+    if not isDemo then markWatched(m.req.videoId)
     removeHistory(m.req.videoId)
     nxt = m.nextEp
     if Type(nxt) = "roAssociativeArray" then
@@ -992,16 +1151,19 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         else if key = "right" then
             moveScrub(1)
         else if key = "rewind" then
-            m.scrubPos = m.scrubPos - 30
-            if m.scrubPos < 0 then m.scrubPos = 0.0
-            updateProgress()
+            shiftScrub(-30)
         else if key = "fastforward" then
-            m.scrubPos = m.scrubPos + 30
-            if m.scrubPos > m.video.duration - 2 then m.scrubPos = m.video.duration - 2
-            updateProgress()
+            shiftScrub(30)
         else if key = "OK" or key = "play" then
             commitScrub()
-        else if key = "back" or key = "down" or key = "up" then
+        else if key = "down" or key = "up" then
+            if m.scrubOrigin = "hidden" then
+                commitScrub()
+                showControls()
+            else
+                exitScrub()
+            end if
+        else if key = "back" then
             exitScrub()
         end if
         return true
@@ -1011,11 +1173,16 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     if key = "play" then
         togglePause()
         return true
-    else if key = "rewind" then
-        seekBy(-30)
-        return true
-    else if key = "fastforward" then
-        seekBy(30)
+    else if key = "rewind" or key = "fastforward" then
+        delta = -30
+        if key = "fastforward" then delta = 30
+        origin = "hidden"
+        if m.ctrlVisible then origin = "buttons"
+        if enterScrub(origin) then
+            shiftScrub(delta)
+        else
+            seekBy(delta)
+        end if
         return true
     end if
 
@@ -1034,6 +1201,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     if key = "back" then
         m.timer.control = "stop"
         m.tickTimer.control = "stop"
+        m.bufferTimer.control = "stop"
         saveNow()
         closePlayer()
         return true

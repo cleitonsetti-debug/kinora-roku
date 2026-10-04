@@ -10,7 +10,7 @@
         <Video id="video" translation="[0, 0]" width="1920" height="1080" enableUI="false"/>
 
         <Group id="intro" visible="false">
-            <Poster uri="pkg:/images/grad_top.png" width="1920" height="200" opacity="0.9"/>
+            <Poster uri="pkg:/images/grad_top_s.png" loadDisplayMode="scaleToFill" width="1920" height="200" opacity="0.9"/>
             <Label id="introTitle" text="" translation="[80, 34]" width="1700" height="66" maxLines="1" color="0xFFFFFFFF">
                 <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="42"/>
             </Label>
@@ -31,7 +31,8 @@
         <Label id="hintLabel" text="" translation="[60, 40]" width="1400" height="40" color="0xFFFFFFCC" visible="false">
             <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="22"/>
         </Label>
-        <Label id="loadingLabel" text="" translation="[0, 500]" width="1920" height="60" horizAlign="center" color="0xFFFFFFFF" visible="false">
+        <BusySpinner id="spinner" uri="pkg:/images/spinner.png" translation="[912, 420]" visible="false"/>
+        <Label id="loadingLabel" text="" translation="[0, 530]" width="1920" height="60" horizAlign="center" color="0xFFFFFFFF" visible="false">
             <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="30"/>
         </Label>
         <Poster id="centerIcon" uri="" translation="[880, 460]" width="160" height="160" visible="false"/>
@@ -52,34 +53,40 @@
             </Label>
         </Group>
 
-        <Group id="controls" visible="false">
-            <Poster uri="pkg:/images/grad_bottom.png" width="1920" height="1080" opacity="0.92"/>
-            <Label id="ctlTitle" text="" translation="[80, 646]" width="1700" height="60" maxLines="1" color="0xFFFFFFFF">
-                <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="38"/>
-            </Label>
-            <Label id="ctlInfo" text="" translation="[80, 710]" width="1700" height="40" maxLines="1" color="0xC9C9D2FF">
-                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
-            </Label>
-            <Poster id="barTrack" uri="pkg:/images/bar_track.9.png" translation="[80, 790]" width="1760" height="10"/>
-            <Poster id="barFill" uri="pkg:/images/bar_fill.9.png" translation="[80, 790]" width="12" height="10" visible="false"/>
-            <Poster id="barKnob" uri="pkg:/images/bar_knob.png" translation="[66, 781]" width="28" height="28"/>
-            <Label id="scrubHint" text="" translation="[1000, 754]" width="840" height="36" horizAlign="right" maxLines="1" color="0xC9C9D2FF" visible="false">
+        <Poster id="shadeMini" uri="pkg:/images/shade_mini_s.png" loadDisplayMode="scaleToFill" translation="[0, 860]" width="1920" height="220" visible="false"/>
+        <Poster id="shadeFull" uri="pkg:/images/shade_full_s.png" loadDisplayMode="scaleToFill" translation="[0, 520]" width="1920" height="560" visible="false"/>
+        <Poster id="shadeTop" uri="pkg:/images/grad_top_s.png" loadDisplayMode="scaleToFill" translation="[0, 0]" width="1920" height="200" visible="false"/>
+
+        <Group id="bar" visible="false">
+            <Poster id="barTrack" uri="pkg:/images/bar_track.9.png" translation="[80, 992]" width="1760" height="10"/>
+            <Poster id="barFill" uri="pkg:/images/bar_fill_red.9.png" translation="[80, 992]" width="12" height="10" visible="false"/>
+            <Poster id="barKnob" uri="pkg:/images/bar_knob_red.png" translation="[66, 983]" width="28" height="28"/>
+            <Label id="scrubHint" text="" translation="[1000, 846]" width="840" height="36" horizAlign="right" maxLines="1" color="0xC9C9D2FF" visible="false">
                 <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="21"/>
             </Label>
-            <Group id="scrubTip" translation="[80, 812]" visible="false">
+            <Group id="scrubTip" translation="[80, 890]" visible="false">
                 <Poster uri="pkg:/images/tip.9.png" width="250" height="44"/>
                 <Label id="scrubTipLabel" text="" width="250" height="44" horizAlign="center" vertAlign="center" maxLines="1" color="0x0A0A0DFF">
                     <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="21"/>
                 </Label>
             </Group>
-            <Label id="timeLeft" text="" translation="[80, 812]" width="400" height="36" color="0xFFFFFFFF">
-                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="22"/>
+            <Label id="timeLeft" text="" translation="[80, 940]" width="700" height="38" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
             </Label>
-            <Label id="timeRight" text="" translation="[1440, 812]" width="400" height="36" horizAlign="right" color="0xFFFFFFFF">
-                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="22"/>
+            <Label id="timeRight" text="" translation="[1240, 940]" width="600" height="38" horizAlign="right" color="0xE6E6EEFF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
+            </Label>
+        </Group>
+
+        <Group id="controls" visible="false">
+            <Label id="ctlTitle" text="" translation="[80, 676]" width="1700" height="60" maxLines="1" color="0xFFFFFFFF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="38"/>
+            </Label>
+            <Label id="ctlInfo" text="" translation="[80, 740]" width="1700" height="40" maxLines="1" color="0xC9C9D2FF">
+                <Font role="font" uri="pkg:/fonts/Poppins-Medium.ttf" size="24"/>
             </Label>
             <MarkupGrid id="buttons"
-                translation="[80, 868]"
+                translation="[80, 800]"
                 itemComponentName="PlayerButton"
                 itemSize="[130, 112]"
                 itemSpacing="[12, 0]"
@@ -111,11 +118,12 @@
         <Timer id="saveTimer" repeat="true" duration="15"/>
         <Timer id="tickTimer" repeat="true" duration="1"/>
         <Timer id="hintTimer" repeat="false" duration="6"/>
-        <Timer id="hideTimer" repeat="false" duration="7"/>
+        <Timer id="hideTimer" repeat="false" duration="5"/>
         <Timer id="toastTimer" repeat="false" duration="1.4"/>
         <Timer id="iconTimer" repeat="false" duration="0.7"/>
         <Timer id="introTimer" repeat="false" duration="7"/>
         <Timer id="scrubTimer" repeat="false" duration="3"/>
+        <Timer id="bufferTimer" repeat="false" duration="30"/>
     </children>
     <script type="text/brightscript" uri="pkg:/source/Utils.brs"/>
     <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="DiagView" extends="Group">
+    <interface>
+        <function name="focusView"/>
+    </interface>
+    <children>
+        <Rectangle width="1920" height="1080" color="0x0A0A0DFF"/>
+        <Label id="titleLabel" text="" translation="[100, 56]" color="0xFFFFFFFF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Bold.ttf" size="42"/>
+        </Label>
+        <Label id="hintLabel" text="" translation="[100, 134]" width="1700" color="0x9A9AA6FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="22"/>
+        </Label>
+        <LabelList id="menu"
+            translation="[100, 196]"
+            itemSize="[520, 60]"
+            numRows="2"
+            textHorizOffset="24"
+            color="0xD8D8E0FF"
+            focusedColor="0x0A0A0DFF"
+            focusBitmapUri="pkg:/images/pill_white.9.png"
+            focusFootprintBitmapUri="pkg:/images/pill_dim.9.png"/>
+        <Label id="report" text="" translation="[100, 340]" width="1700" height="680" wrap="true" maxLines="21" color="0xD8D8E0FF">
+            <Font role="font" uri="pkg:/fonts/Poppins-Regular.ttf" size="21"/>
+        </Label>
+    </children>
+    <script type="text/brightscript" uri="pkg:/source/Utils.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/I18n.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/Storage.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/AddonStore.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/Settings.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/SelfTest.brs"/>
+    <script type="text/brightscript" uri="pkg:/components/DiagView.brs"/>
+</component>
