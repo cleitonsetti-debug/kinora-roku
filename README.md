@@ -3,6 +3,67 @@
 **Kinora** é um canal SceneGraph (BrightScript) com catálogo real via **addons no protocolo Stremio** (padrão: Cinemeta),
 busca, temporadas/episódios, escolha de fonte, player e "Continuar assistindo".
 
+## O que há de novo na v1.5
+
+Resumo do que foi adicionado nesta série (1.5.0, 1.5.1 e 1.5.2). Os detalhes por versão estão no `CHANGELOG.md`.
+
+### Perfis ("Quem está assistindo?")
+- Tela de escolha de perfil ao abrir o app (aparece quando existe mais de um perfil). Até **6 perfis**, cada um com
+  avatar colorido e inicial.
+- Cada perfil tem **histórico, Minha lista, episódios assistidos, buscas recentes, legendas/áudio lembrados e ajustes
+  próprios**. Os addons e o PIN são compartilhados entre todos.
+- **Perfil infantil:** conteúdo adulto sempre oculto e Ajustes/Addons bloqueados (pedem o PIN, se houver um; sem PIN,
+  mostram um aviso para pedir a um adulto). Sair de um perfil infantil para um perfil de adulto pede o PIN, se houver.
+- Criar, renomear, alternar infantil e excluir: tecla `*` na tela de perfis, ou **Ajustes > Perfis > Gerenciar perfis**.
+  O menu de cada perfil tem "Entrar neste perfil".
+- Os dados de antes da v1.5 viram o perfil **Principal** (nada se perde). O nome do perfil ativo aparece na barra do topo.
+
+### Visual
+- **Luz ambiente** colorida atrás do banner que muda com cada título (a cor sai do código do título, então é sempre a
+  mesma para o mesmo filme) e **barra de navegação em vidro** com indicador colorido.
+- **Cartões de vidro** nas telas de Addons, Ajustes e Perfis; posters maiores; selos arredondados (tipo, IMDb) no banner.
+- **Zoom lento no banner** (efeito cinematográfico): começa **desligado**, ligue em Ajustes > Geral.
+- **Continuar / Assistir com um clique** no banner: abre a ficha, escolhe a fonte (a mesma de antes, se houver) e já
+  começa a tocar. O que você estava assistindo vai primeiro nos destaques.
+
+### Player (estilo Netflix/YouTube)
+- Esquerda/Direita **pulam na hora** (10, 15 ou 30 s, configurável; acelera se você repetir ou segurar) mostrando só a
+  barra vermelha com os tempos. OK pausa mostrando só a barra e um ícone grande de pausa.
+- **Baixo** abre os controles completos (-/+ salto, pausar, Ir para, legendas, áudio, próximo episódio, fonte).
+  **Ir para** (ou Cima nos controles) escolhe um ponto na barra e confirma com OK.
+- Não há miniaturas de quadro ao mover a barra: elas dependem de arquivos de pré-visualização que streams comuns não têm.
+
+### Addons
+- Cartões com o **ícone do addon** (logo do manifest ou uma inicial colorida), versão e status (ativo, desativado, sem conexão).
+- Painel de detalhes e quatro botões: **Ativar/Desativar**, **Atualizar** (busca o manifest de novo e mostra a versão
+  antiga e a nova), **Configurar** (mostra o endereço da página de configuração, só para addons que declaram uma;
+  abra no celular ou computador) e **Remover** (com confirmação).
+- No topo da lista: **Adicionar addon** e **Atualizar todos**.
+
+### Ajustes
+Sete categorias, cada linha com descrição e o valor em uma pílula:
+- **Geral:** idioma, banner animado, zoom do banner, luz ambiente.
+- **Reprodução:** retomar, escolher fonte automaticamente, qualidade preferida, próximo episódio automático, ficha ao
+  iniciar, salto dos botões (10/15/30 s).
+- **Legendas e áudio:** idioma preferido de cada um.
+- **Segurança e conteúdo:** ocultar conteúdo adulto (travado em perfil infantil) e bloqueio por PIN.
+- **Perfis:** trocar de perfil e gerenciar perfis.
+- **Dados:** limpar Continuar assistindo, Minha lista, pesquisas recentes e episódios assistidos; restaurar addons padrão
+  e restaurar ajustes padrão.
+- **Sobre e ajuda:** verificar atualização, diagnóstico e autoteste, atalhos do controle e sobre.
+
+### Atualização
+- **Aviso dentro do app:** ao abrir, o Kinora consulta as releases do GitHub e avisa uma vez por versão nova. Também em
+  Ajustes > Sobre e ajuda > Verificar atualização. O app **não instala nada sozinho**.
+- **Atualização automática pelo computador:** `tools/auto-update.sh` (veja a seção "Atualização automática").
+
+### Correções da 1.5.1
+- **Travadas:** o banner (carrossel, zoom e transições) agora para e solta as imagens de fundo enquanto o vídeo toca;
+  a tela inicial cria só as linhas próximas e monta o resto conforme você desce; gradientes e brilho usam imagens
+  pequenas esticadas em vez de texturas de tela cheia.
+- **Perfil infantil:** criar perfil e escolher o tipo usa um menu do próprio app (sem diálogos encadeados) e o menu do
+  perfil ganhou "Entrar neste perfil".
+
 ## Instalar no Roku
 
 1. No Roku: Home x3, Cima x2, Direita, Esquerda, Direita, Esquerda, Direita. Ative o Modo Desenvolvedor e defina a senha.
@@ -37,6 +98,7 @@ Tema escuro estilo "AMOLED" (fundo quase preto, texto branco, sem cores berrante
 para TV do ecossistema Stremio/Nuvio: barra de navegação no topo, **banner do título em foco** (fundo, título,
 metadados e sinopse mudam conforme você navega), posters com cantos arredondados e anel de foco branco,
 barra de progresso nos itens de "Continuar assistindo", botão de assistir em pílula e episódios em cards com miniatura.
+Na v1.5 ganhou luz ambiente colorida, barra de navegação e cartões em vidro (veja "O que há de novo na v1.5").
 Fonte: Poppins (licença SIL OFL, embutida em `fonts/`).
 
 ## Como usar
@@ -47,7 +109,10 @@ Fonte: Poppins (licença SIL OFL, embutida em `fonts/`).
 - **Detalhes**: filmes têm o botão Assistir; séries/animes mostram chips de Temporada (Baixo vai para os episódios).
 - **Fontes**: ao escolher Assistir/episódio, o app consulta os addons que têm o recurso `stream` e lista as fontes de vídeo direto (http/https).
   O último item da lista é sempre um **vídeo de teste** (Big Buck Bunny) para validar o player.
-- **Addons** (menu): OK ativa/desativa, `*` remove, "+ Adicionar addon" pede a URL do manifest (aceita `stremio://`).
+- **Addons** (menu): escolha um addon na lista e use os botões Ativar/Desativar, Atualizar, Configurar e Remover; "Adicionar addon" pede a URL do manifest (aceita `stremio://`) e "Atualizar todos" confere todos de uma vez.
+- **Ajustes** (menu): categorias à esquerda, opções à direita; OK muda o valor da linha.
+- **Perfis** (último item da barra do topo): escolher, criar e gerenciar perfis.
+- **Player**: Esquerda/Direita pulam, OK pausa, Baixo abre os controles, Voltar sai.
 - **Continuar assistindo**: o progresso é salvo a cada 15 s no registry do Roku e a reprodução retoma de onde parou.
 
 ## Sobre as fontes de vídeo
@@ -60,12 +125,18 @@ O Roku não reproduz torrent (`infoHash`) nem YouTube (`ytId`); essas fontes sã
 
 ```
 manifest
-source/      main.brs, Utils.brs, Storage.brs, AddonStore.brs
-components/  MainScene (pilha de telas, carrega addons)
-             HomeView, SearchView, AddonsView, DetailsView, PlayerView
-             JsonTask (rede em Task), PosterItem, NavItem, KeyItem, ChipItem (itens de lista)
-images/      ícones, splash, gradientes do banner e bitmaps 9-patch (foco, cantos, pílulas)
+source/      main.brs, Utils.brs, I18n.brs, Storage.brs, AddonStore.brs, Streams.brs, Subs.brs,
+             Settings.brs, SelfTest.brs
+components/  MainScene (pilha de telas, carrega addons, perfis e aviso de versão)
+             HomeView, HomeRow, SearchView, DetailsView, PlayerView
+             AddonsView, AddonItem            (addons com ícone e botões)
+             SettingsView, SettingsCat, SettingRow   (ajustes em categorias)
+             ProfileView, ProfileTile         (quem está assistindo)
+             DiagView (diagnóstico e autoteste), JsonTask (rede em Task)
+             PosterItem, NavItem, KeyItem, ChipItem, PlayerButton, PillButton, HeroButton (itens e botões)
+images/      ícones, splash, gradientes, brilho, cartões e bitmaps 9-patch (foco, cantos, pílulas)
 fonts/       Poppins (Regular, Medium, Bold)
+tools/       package.sh, install.sh, auto-update.sh, add-addon.sh/.html, lint.py
 ```
 
 ## O que foi corrigido em relação à versão anterior
@@ -77,13 +148,6 @@ fonts/       Poppins (Regular, Medium, Bold)
 - Pasta `images/` criada, com todos os assets referenciados.
 - Addons, catálogos, metadados, episódios e streams vêm de dados reais em vez de listas mockadas.
 - `.env`, `CLAUDE.md`, `.bak` e `index.html` ficaram de fora do pacote.
-
-## Novidades da v1.5
-
-- **Perfis** estilo "Quem está assistindo?" (com perfil infantil), cada um com histórico, lista e ajustes próprios.
-- **Visual cinematográfico**: luz ambiente colorida por título, zoom lento no banner e barra de navegação em vidro.
-- **Continuar/Assistir em um clique** direto do banner.
-- **Addons** com ícone, detalhes, atualizar, configurar e remover; **Ajustes** em categorias, bem mais completos.
 
 ## Novidades da v1.4
 
